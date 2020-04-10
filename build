@@ -1,0 +1,2 @@
+g++ -I include/ lib/libraylib-cpp.a /usr/local/lib/libraylib.a src/core_basic_window.cpp -lraylib -lglfw -lGL -lm -lpthread -ldl -lX11 -lXrandr -lXinerama -lXi -lXxf86vm -lXcursor
+
