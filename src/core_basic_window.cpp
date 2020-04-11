@@ -1,58 +1,62 @@
-/*******************************************************************************************
-*
-*   raylib [core] example - Basic window
-*
-*   Welcome to raylib!
-*
-*   To test examples, just press F6 and execute raylib_compile_execute script
-*   Note that compiled executable is placed in the same folder as .c file
-*
-*   You can find all basic examples on C:\raylib\raylib\examples folder or
-*   raylib official webpage: www.raylib.com
-*
-*   Enjoy using raylib. :)
-*
-*   This example has been created using raylib 1.0 (www.raylib.com)
-*   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
-*
-*   Copyright (c) 2014 Ramon Santamaria (@raysan5)
-*
-********************************************************************************************/
-
 #include "raylib/raylib.hpp"
+#include <iostream>
 
 int main()
 {
-	// Initialization
-	//--------------------------------------------------------------------------------------
-	int screenWidth = 3000;
-	int screenHeight = 1500;
-	raylib::Color background(RAYWHITE);
-	raylib::Color textColor(LIGHTGRAY);
-	raylib::Window w(screenWidth, screenHeight, "Sample Window");
+	const char *welcomeText = "Welcome to your Game!";
+	double position = 0;
 
-	SetTargetFPS(60);
-	//--------------------------------------------------------------------------------------
+	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_FULLSCREEN_MODE);
+
+	raylib::Color background(WHITE);
+	raylib::Color barColor(BLUE);
+	raylib::Color textColor(BLACK);
+	raylib::Color fpsColor(GREEN);
+	raylib::Window w(0, 0, "Forbidden Desert");
+
+	int monitorWidth = GetMonitorWidth(0);
+	int monitorHeight = GetMonitorHeight(0);
+
+	double lastTime = GetTime();
+	int fontSize = monitorHeight / 15;
+	int textWidth = MeasureText(welcomeText, fontSize);
+	int barWidth = monitorWidth / 30;
+	int barMax = monitorWidth - barWidth;
+	int velocity = monitorWidth / 5;
+
 
 	// Main game loop
 	while (!w.ShouldClose())    // Detect window close button or ESC key
 	{
+		//----------------------------------------------------------------------------------
 		// Update
 		//----------------------------------------------------------------------------------
-		// TODO: Update your variables here
-		//----------------------------------------------------------------------------------
+		double elapsedTime = GetTime() - lastTime;
+		lastTime += elapsedTime;
+		position += velocity * elapsedTime;
+		while (true) {
+			if (position > barMax) {
+				position = 2*barMax - position;
+			} else if (position < 0) {
+				position = -position;
+			} else {
+				break;
+			}
+			velocity = -velocity;
+		}
 
+		//----------------------------------------------------------------------------------
 		// Draw
 		//----------------------------------------------------------------------------------
 		BeginDrawing();
 
 		background.ClearBackground();
-
-		textColor.DrawText("Congrats! You created your first window!", 190, 200, 80);
+		barColor.DrawRectangle(position, 0, barWidth, monitorHeight);
+		textColor.DrawText(welcomeText, (monitorWidth - textWidth) / 2, (monitorHeight - fontSize) / 2, fontSize);
+		fpsColor.DrawText(std::to_string(GetFPS()), fontSize / 2, fontSize / 2, fontSize);
 
 		EndDrawing();
-		//----------------------------------------------------------------------------------
 	}
 
-	return 0;
+	return 1;
 }
