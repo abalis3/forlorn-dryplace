@@ -8,7 +8,8 @@ An implementation of a favorite board game in C++ using raylib.
 - Clone this repo and run win-build.bat to create executable
 
 ### Linux Setup
-- TODO
+- Install raylib (Use version 3.0.0!) following https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
+- Clone this repository and run build.sh to create executable
 
 ### MacOS Setup
 - TODO
