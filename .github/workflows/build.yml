@@ -13,18 +13,8 @@ jobs:
     steps:
     - name: Checkout commit code
       uses: actions/checkout@v2
-    - name: Show environment
-      run: env
-    - name: Show libs
-      run: ls /usr/lib
-    - name: Show more libs
-      run: ls /usr/lib/x86_64-linux-gnu/
     - name: Install dependencies
-      run: ./ci/installRaylib.sh
-    - name: Show libs again
-      run: ls /usr/lib
-    - name: Show more libs again
-      run: ls /usr/lib/x86_64-linux-gnu/
+      run: ./ci/installLinuxDependencies.sh
     - name: Build executable
       run: ./build.sh CI
     - name: List results
