@@ -1,6 +1,7 @@
 #ifndef RAYLIB_CPP_RAYLIB_CPP_HPP_
 #define RAYLIB_CPP_RAYLIB_CPP_HPP_
 
+#define CLITERAL(type) (type)
 #include "AudioDevice.hpp"
 #include "AudioStream.hpp"
 #include "BoundingBox.hpp"
