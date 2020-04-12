@@ -37,3 +37,16 @@ jobs:
       with:
         name: macOS-executable
         path: bin/forlorn-dryplace
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout commit code
+      uses: actions/checkout@v2
+    - name: Install raylib
+      run: ./ci/installWindowsDependencies
+    - name: Show directory
+      run: ls
+    - name: Show raylib dir
+      run: ls raylib
