@@ -1,6 +1,6 @@
 #!/bin/bash
 
-apt-get install libasound2-dev mesa-common-dev libx11-dev libxrandr-dev libxi-dev xorg-dev libgl1-mesa-dev libglu1-mesa-dev
+sudo apt-get install libasound2-dev mesa-common-dev libx11-dev libxrandr-dev libxi-dev xorg-dev libgl1-mesa-dev libglu1-mesa-dev
 
 RAYLIB_URL=$(curl -s https://api.github.com/repos/raysan5/raylib/releases/tags/3.0.0 \
     | grep browser_download_url \
