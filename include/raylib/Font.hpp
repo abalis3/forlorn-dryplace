@@ -72,11 +72,11 @@ namespace raylib {
 			return *this;
 		}
 
-		inline Font& DrawText(const std::string& text, ::Vector2 position, float fontSize, float spacing, ::Color tint = WHITE) {
+		inline Font& DrawText(const std::string& text, ::Vector2 position, float fontSize, float spacing, ::Color tint) {
 			::DrawTextEx(*this, text.c_str(), position,  fontSize,  spacing,  tint);
 			return *this;
 		}
-		inline Font& DrawText(const std::string& text, ::Rectangle rec, float fontSize, float spacing, bool wordWrap, ::Color tint = WHITE) {
+		inline Font& DrawText(const std::string& text, ::Rectangle rec, float fontSize, float spacing, bool wordWrap, ::Color tint) {
 			::DrawTextRec(*this, text.c_str(), rec,  fontSize,  spacing,  wordWrap,  tint);
 			return *this;
 		}
