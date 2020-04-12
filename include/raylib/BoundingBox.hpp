@@ -42,7 +42,7 @@ namespace raylib {
             return *this;
         }
 
-		inline BoundingBox& Draw(::Color color) {
+		inline BoundingBox& Draw(::Color color = WHITE) {
 			DrawBoundingBox(*this, color);
 			return *this;
 		}

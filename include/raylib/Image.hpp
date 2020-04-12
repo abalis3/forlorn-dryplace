@@ -213,7 +213,7 @@ namespace raylib {
 			::ImageRotateCCW(this);
 			return *this;
 		}
-		inline Image& ColorTint(::Color color) {
+		inline Image& ColorTint(::Color color = WHITE) {
 			::ImageColorTint(this, color);
 			return *this;
 		}
@@ -246,7 +246,7 @@ namespace raylib {
 			return ::GetImageAlphaBorder(*this, threshold);
 		}
 
-		inline Image& ClearBackground(::Color color) {
+		inline Image& ClearBackground(::Color color = WHITE) {
 			::ImageClearBackground(this, color);
 			return *this;
 		}
@@ -280,15 +280,15 @@ namespace raylib {
 			::ImageDrawCircleV(this, center, radius, color);
 			return *this;
 		}
-		inline Image& DrawRectangle(int posX, int posY, int width, int height, ::Color color) {
+		inline Image& DrawRectangle(int posX, int posY, int width, int height, ::Color color = WHITE) {
 			::ImageDrawRectangle(this, posX, posY, width, height, color);
 			return *this;
 		}
-		inline Image& DrawRectangle(Vector2 position, Vector2 size, ::Color color) {
+		inline Image& DrawRectangle(Vector2 position, Vector2 size, ::Color color = WHITE) {
 			::ImageDrawRectangleV(this, position, size, color);
 			return *this;
 		}
-		inline Image& DrawRectangle(::Rectangle rec, ::Color color) {
+		inline Image& DrawRectangle(::Rectangle rec, ::Color color = WHITE) {
 			::ImageDrawRectangleRec(this, rec, color);
 			return *this;
 		}
@@ -296,16 +296,16 @@ namespace raylib {
 			::ImageDrawRectangleLines(this, rec, thick, color);
 			return *this;
 		}
-		inline Image& Draw(::Image& src, ::Rectangle srcRec, ::Rectangle dstRec, ::Color tint) {
+		inline Image& Draw(::Image& src, ::Rectangle srcRec, ::Rectangle dstRec, ::Color tint = WHITE) {
 			::ImageDraw(this, src, srcRec, dstRec, tint);
 			return *this;
 		}
 
-		inline Image& DrawText(::Vector2 position, const std::string& text, int fontSize, ::Color color){
+		inline Image& DrawText(::Vector2 position, const std::string& text, int fontSize, ::Color color = WHITE){
 			::ImageDrawText(this, position, text.c_str(), fontSize, color);
 			return *this;
 		}
-		inline Image& DrawText(::Vector2 position, ::Font font, const std::string& text, float fontSize, float spacing, ::Color color){
+		inline Image& DrawText(::Vector2 position, ::Font font, const std::string& text, float fontSize, float spacing, ::Color color = WHITE){
 			::ImageDrawTextEx(this, position, font, text.c_str(), fontSize, spacing, color);
 			return *this;
 		}

@@ -108,12 +108,12 @@ namespace raylib {
 			return ::GetWorldToScreen(position, *this);
 		}
 
-		inline Camera3D& DrawBillboard(::Texture2D texture, ::Vector3 center, float size, ::Color tint) {
+		inline Camera3D& DrawBillboard(::Texture2D texture, ::Vector3 center, float size, ::Color tint = WHITE) {
 			::DrawBillboard(*this, texture, center, size, tint);
 			return *this;
 		}
 
-		inline Camera3D& DrawBillboard(Texture2D texture, Rectangle sourceRec, Vector3 center, float size, ::Color tint) {
+		inline Camera3D& DrawBillboard(Texture2D texture, Rectangle sourceRec, Vector3 center, float size, ::Color tint = WHITE) {
 			::DrawBillboardRec(*this, texture, sourceRec, center, size, tint);
 			return *this;
 		}
