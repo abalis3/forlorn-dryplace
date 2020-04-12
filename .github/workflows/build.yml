@@ -7,7 +7,6 @@ on:
 jobs:
 
   build-linux:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -22,3 +21,10 @@ jobs:
       with:
         name: linux-executable
         path: bin/forlorn-dryplace
+
+  build-macos:
+      runs-on: macos-latest
+
+      steps:
+      - name: Test Homebrew
+        run: brew --version
