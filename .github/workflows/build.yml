@@ -23,12 +23,17 @@ jobs:
         path: bin/forlorn-dryplace
 
   build-macos:
-      runs-on: macos-latest
+    runs-on: macos-latest
 
-      steps:
-      - name: Checkout commit code
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: ./ci/installMacDependencies.sh
-      - name: Build executable
-        run: ./mac-build.sh
+    steps:
+    - name: Checkout commit code
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      run: ./ci/installMacDependencies.sh
+    - name: Build executable
+      run: ./mac-build.sh
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: macOS-executable
+        path: bin/forlorn-dryplace
