@@ -203,12 +203,12 @@ namespace raylib {
 
 	};
 
-	Color Color::LightGray = LIGHTGRAY;
-	Color Color::Gray = GRAY;
-	Color Color::DarkGray = DARKGRAY;
-	Color Color::Yellow = YELLOW;
-	Color Color::Gold = GOLD;
-	Color Color::Orange = ORANGE;
+	Color Color::LightGray = ::LIGHTGRAY;
+	Color Color::Gray = ::GRAY;
+	Color Color::DarkGray = ::DARKGRAY;
+	Color Color::Yellow = ::YELLOW;
+	Color Color::Gold = ::GOLD;
+	Color Color::Orange = ::ORANGE;
 	Color Color::Pink = ::PINK;
 	Color Color::Red = ::RED;
 	Color Color::Maroon = ::MAROON;
