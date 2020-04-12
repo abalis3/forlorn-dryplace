@@ -13,6 +13,8 @@ jobs:
     steps:
     - name: Checkout commit code
       uses: actions/checkout@v2
+    - name: Show environment
+    - run: env
     - name: Install dependencies
       run: ./ci/installRaylib.sh
     - name: Build executable
