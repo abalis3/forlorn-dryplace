@@ -17,5 +17,8 @@ jobs:
       run: ./ci/installLinuxDependencies.sh
     - name: Build executable
       run: ./build.sh CI
-    - name: List results
-      run: ls bin
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: linux-executable
+        path: bin/forlorn-dryplace
