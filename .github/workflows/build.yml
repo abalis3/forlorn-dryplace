@@ -1,0 +1,21 @@
+name: Release
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+
+  build-linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout commit code
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      run: ./ci/installRaylib.sh
+    - name: Build executable
+      run: ./build.sh CI
+    - name: List results
+      run: ls bin
