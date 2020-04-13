@@ -1,4 +1,4 @@
-@ECHO OFF
+REM @ECHO OFF
 rmdir /s /q bin
 mkdir bin
 
