@@ -47,4 +47,4 @@ jobs:
     - name: Install raylib
       run: ./ci/installWindowsDependencies
     - name: Build executable
-      run: win-build.bat
+      run: ./win-build.bat
