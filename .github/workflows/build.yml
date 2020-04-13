@@ -15,7 +15,7 @@ jobs:
     - name: Install dependencies
       run: ./ci/installLinuxDependencies.sh
     - name: Build executable
-      run: ./build.sh CI
+      run: ./linux-build.sh CI
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v1
       with:
@@ -47,4 +47,4 @@ jobs:
     - name: Install raylib
       run: ./ci/installWindowsDependencies
     - name: Build executable
-      run: ./win-build.bat
+      run: ./win-build.bat CI
