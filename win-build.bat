@@ -4,7 +4,7 @@ mkdir bin
 
 if "%*"=="CI" (
     g++ -m32 -DRAYLIB_CPP_NO_MATH=1 -I raylib/include/ -I include/ -L raylib/lib src/*.cpp -lopengl32 -static -lraylib_static -lpthread -lwinmm -lgdi32 -o bin/forlorn-dryplace.exe
-    echo %ERRORLEVEL%
+    echo ERRORLEVEL
     echo.
     echo Built executable for CI
 ) else (
