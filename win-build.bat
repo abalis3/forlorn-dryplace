@@ -1,9 +1,9 @@
-REM @ECHO OFF
+@ECHO OFF
 rmdir /s /q bin
 mkdir bin
 
 if "%*"=="CI" (
-    g++ -DRAYLIB_CPP_NO_MATH=1 -I raylib/include/ -I include/ -L raylib/lib src/*.cpp -lopengl32 -static -lraylib_static -lpthread -lwinmm -lgdi32 -o bin/forlorn-dryplace.exe    
+    g++ -m32 -DRAYLIB_CPP_NO_MATH=1 -I raylib/include/ -I include/ -L raylib/lib src/*.cpp -lopengl32 -static -lraylib_static -lpthread -lwinmm -lgdi32 -o bin/forlorn-dryplace.exe    
     if %errorlevel% neq 0 exit /b %errorlevel%
     echo.
     echo Built executable for CI
