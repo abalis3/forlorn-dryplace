@@ -48,3 +48,8 @@ jobs:
       run: ./ci/installWindowsDependencies
     - name: Build executable
       run: ./win-build.bat CI
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: windows-executable
+        path: bin/forlorn-dryplace.exe
