@@ -9,8 +9,10 @@ An implementation of a favorite board game in C++ using raylib.
 
 ### Linux Setup
 - Install raylib (Use version 3.0.0!) following https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
-- Clone this repository and run build.sh to create executable
+- Clone this repository and run linux-build.sh to create executable (output in bin/)
 
 ### MacOS Setup
-- TODO
+- Clone this repository and enter its root directory
+- Run the script ci/installMacDependencies.sh to install raylib into the project directory
+- Run mac-build.sh to create executable (output in bin/)
 

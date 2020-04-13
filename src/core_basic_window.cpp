@@ -3,7 +3,7 @@
 
 int main()
 {
-	const char *welcomeText = "Welcome to your Game!";
+	const char *welcomeText = "Welcome to my Game!";
 	double position = 0;
 
 	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_FULLSCREEN_MODE);
