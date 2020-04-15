@@ -1,8 +1,8 @@
-name: Build All Platforms
+name: Build and Release
 
 on:
   push:
-    branches-ignore: [ master ]
+    branches: [ master ]
 
 jobs:
 
@@ -53,3 +53,38 @@ jobs:
       with:
         name: windows-executable
         path: bin/forbidden-desert.exe
+
+  release:
+    runs-on: ubuntu-latest
+    needs:
+      - build-linux
+      - build-macos
+      - build-windows
+
+    steps:
+    - name: Checkout commit code
+      uses: actions/checkout@v2
+    - name: Download linux build artifact
+      uses: actions/download-artifact@v1
+      with:
+        name: linux-executable
+    - name: Download mac build artifact
+      uses: actions/download-artifact@v1
+      with:
+        name: macOS-executable
+    - name: Download windows build artifact
+      uses: actions/download-artifact@v1
+      with:
+        name: windows-executable
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12
+    - name: Install semantic-release and plugins
+      run: |
+        npm install -g semantic-release@17
+        npm install -g @semantic-release/exec@5
+    - name: Release with semantic-release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+      run: npx semantic-release

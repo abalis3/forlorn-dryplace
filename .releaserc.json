@@ -1,0 +1,18 @@
+{
+    "branches": ["master"],
+    "repositoryUrl": "git@github.com:abalis3/forlorn-dryplace.git",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      ["@semantic-release/exec", {
+        "prepareCmd": "./ci/prepareRelease.sh ${nextRelease.version}"
+      }],
+      ["@semantic-release/github", {
+        "assets": [
+          {"path": "linux-executable/forbidden-desert-ubuntu-*.tar.gz"},
+          {"path": "macOS-executable/forbidden-desert-macOS-*.tar.gz"},
+          {"path": "windows-executable/forbidden-desert-windows-*.zip"}
+        ]
+      }]
+    ]
+  }
