@@ -1,32 +1,31 @@
 #include "raylib/raylib.hpp"
 #include <iostream>
 
+#include "Window.h"
+
 int main()
 {
 	const char *welcomeText = "Welcome to my Game!";
 	double position = 0;
 
-	SetConfigFlags(FLAG_VSYNC_HINT | FLAG_FULLSCREEN_MODE);
-
 	raylib::Color background(WHITE);
 	raylib::Color barColor(BLUE);
 	raylib::Color textColor(BLACK);
 	raylib::Color fpsColor(GREEN);
-	raylib::Window w(0, 0, "Forbidden Desert");
+	Window w;
 
-	int monitorWidth = GetMonitorWidth(0);
-	int monitorHeight = GetMonitorHeight(0);
+	int windowWidth = w.getWidth();
+	int windowHeight = w.getHeight();
 
 	double lastTime = GetTime();
-	int fontSize = monitorHeight / 15;
+	int fontSize = windowHeight / 15;
 	int textWidth = MeasureText(welcomeText, fontSize);
-	int barWidth = monitorWidth / 30;
-	int barMax = monitorWidth - barWidth;
-	int velocity = monitorWidth / 5;
-
+	int barWidth = windowWidth / 30;
+	int barMax = windowWidth - barWidth;
+	int velocity = windowWidth / 5;
 
 	// Main game loop
-	while (!w.ShouldClose())    // Detect window close button or ESC key
+	while (!w.shouldClose())    // Detect window close button or ESC key
 	{
 		//----------------------------------------------------------------------------------
 		// Update
@@ -51,12 +50,12 @@ int main()
 		BeginDrawing();
 
 		background.ClearBackground();
-		barColor.DrawRectangle(position, 0, barWidth, monitorHeight);
-		textColor.DrawText(welcomeText, (monitorWidth - textWidth) / 2, (monitorHeight - fontSize) / 2, fontSize);
-		fpsColor.DrawText(std::to_string(GetFPS()), fontSize / 2, fontSize / 2, fontSize);
+		barColor.DrawRectangle(position, 0, barWidth, windowHeight);
+		textColor.DrawText(welcomeText, (windowWidth - textWidth) / 2, (windowHeight - fontSize) / 2, fontSize);
+		fpsColor.DrawText(std::to_string(w.getFPS()), fontSize / 2, fontSize / 2, fontSize);
 
 		EndDrawing();
 	}
 
-	return 1;
+    return 0;
 }

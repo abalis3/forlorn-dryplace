@@ -59,7 +59,7 @@ namespace raylib {
 			a = color.a;
 		}
 
-		static Color LightGray;
+		/*static Color LightGray;
 		static Color Gray;
 		static Color DarkGray;
 		static Color Yellow;
@@ -84,7 +84,7 @@ namespace raylib {
 		static Color Black;
 		static Color Blank;
 		static Color Magenta;
-		static Color RayWhite;
+		static Color RayWhite;*/
 
 		int ToInt() {
 			return ::ColorToInt(*this);
@@ -203,7 +203,7 @@ namespace raylib {
 
 	};
 
-	Color Color::LightGray = ::LIGHTGRAY;
+	/*Color Color::LightGray = ::LIGHTGRAY;
 	Color Color::Gray = ::GRAY;
 	Color Color::DarkGray = ::DARKGRAY;
 	Color Color::Yellow = ::YELLOW;
@@ -228,7 +228,7 @@ namespace raylib {
 	Color Color::Black = ::BLACK;
 	Color Color::Blank = ::BLANK;
 	Color Color::Magenta = ::MAGENTA;
-	Color Color::RayWhite = ::RAYWHITE;
+	Color Color::RayWhite = ::RAYWHITE;*/
 }
 
 #endif
