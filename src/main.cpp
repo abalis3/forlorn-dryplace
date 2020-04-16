@@ -1,38 +1,39 @@
-#include "raylib/raylib.hpp"
 #include <iostream>
 
 #include "Window.h"
 
-int main()
-{
-	const char *welcomeText = "Welcome to my Game!";
-	double position = 0;
+class TestScene : public Scene {
+ 
+ public:
 
-	raylib::Color background(WHITE);
-	raylib::Color barColor(BLUE);
-	raylib::Color textColor(BLACK);
-	raylib::Color fpsColor(GREEN);
-	Window w;
+	TestScene() {
+		position = 0;
+		currentFPS = 0;
+		textMeasured = false;
+	}
 
-	int windowWidth = w.getWidth();
-	int windowHeight = w.getHeight();
+	void render(Renderer *renderer) override {
 
-	double lastTime = GetTime();
-	int fontSize = windowHeight / 15;
-	int textWidth = MeasureText(welcomeText, fontSize);
-	int barWidth = windowWidth / 30;
-	int barMax = windowWidth - barWidth;
-	int velocity = windowWidth / 5;
+		if (!textMeasured) {
+			textWidth = renderer->measureText(welcomeText, fontSize);
+			textMeasured = true;
+		}
 
-	// Main game loop
-	while (!w.shouldClose())    // Detect window close button or ESC key
-	{
-		//----------------------------------------------------------------------------------
-		// Update
-		//----------------------------------------------------------------------------------
-		double elapsedTime = GetTime() - lastTime;
-		lastTime += elapsedTime;
-		position += velocity * elapsedTime;
+		renderer->setColor(GRAY);
+		renderer->clearBackground();
+
+		renderer->setColor(BLUE);
+		renderer->drawRectangle(position, 0, barWidth, getHeight());
+
+		renderer->setColor(BLACK);
+		renderer->drawText(welcomeText, (getWidth() - textWidth) / 2, (getHeight() - fontSize) / 2, fontSize);
+		
+		renderer->setColor(GREEN);
+		renderer->drawText(std::to_string(currentFPS), fontSize / 2, fontSize / 2, fontSize);
+	}
+
+	void update(double secs) override {
+		position += velocity * secs;
 		while (true) {
 			if (position > barMax) {
 				position = 2*barMax - position;
@@ -43,18 +44,58 @@ int main()
 			}
 			velocity = -velocity;
 		}
+	}
 
-		//----------------------------------------------------------------------------------
-		// Draw
-		//----------------------------------------------------------------------------------
-		BeginDrawing();
+	void onSizeChangedFrom(int oldWidth, int oldHeight) override {
+		fontSize = getHeight() / 15;
+		barWidth = getWidth() / 30;
+		barMax = getWidth() - barWidth;
+		if (velocity < 0) {
+			velocity = getWidth() / -5;
+		} else {
+			velocity = getWidth() / 5;
+		}
 
-		background.ClearBackground();
-		barColor.DrawRectangle(position, 0, barWidth, windowHeight);
-		textColor.DrawText(welcomeText, (windowWidth - textWidth) / 2, (windowHeight - fontSize) / 2, fontSize);
-		fpsColor.DrawText(std::to_string(w.getFPS()), fontSize / 2, fontSize / 2, fontSize);
+		position = (position / oldWidth) * getWidth();
 
-		EndDrawing();
+	}
+
+	void updateFPS(int fps) {
+		currentFPS = fps;
+	}
+
+private:
+
+	const char *welcomeText = "Welcome to my Game!";
+	int fontSize;
+	int textWidth;
+	int barWidth;
+	int barMax;
+	int velocity;
+	double position;
+	int currentFPS;
+	bool textMeasured;
+
+};
+
+int main()
+{
+	Window window;
+	TestScene scene;
+
+	window.flipToScene(&scene);
+
+	double lastTime = GetTime();
+	while (!window.shouldClose()) {
+
+		/* Update the scene */
+		double elapsedTime = GetTime() - lastTime;
+		lastTime += elapsedTime;
+		scene.update(elapsedTime);
+		scene.updateFPS(window.getFPS());
+
+		/* Render the window */
+		window.renderFrame();
 	}
 
     return 0;

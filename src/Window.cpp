@@ -33,6 +33,8 @@ void Window::constructWindow(const struct WindowConfiguration *config)
     SetTargetFPS(config->targetFPS);
     raylibWindow = new raylib::Window(config->windowWidth,
             config->windowHeight, WINDOW_TITLE);
+
+    currentScene = nullptr;
 }
 
 Window::~Window()
@@ -58,4 +60,24 @@ int Window::getFPS()
 bool Window::shouldClose()
 {
     return raylibWindow->ShouldClose();
+}
+
+void Window::flipToScene(Scene *newScene)
+{
+    currentScene = newScene;
+    currentScene->updateWindowSize(getWidth(), getHeight());
+}
+
+void Window::update(double secs)
+{
+    /* TODO: check if window resized and notify scene if so */
+}
+
+void Window::renderFrame()
+{
+    renderer.start();
+    if (currentScene != nullptr) {
+        currentScene->render(&renderer);
+    }
+    renderer.stop();
 }

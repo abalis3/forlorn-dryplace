@@ -3,6 +3,8 @@
 
 #include <raylib/raylib.hpp>
 
+#include "Scene.h"
+
 /*
  * Used to represent window configuration settings
  * for saving/loading window configuration
@@ -56,6 +58,23 @@ class Window {
      */
     bool shouldClose();
 
+    /*
+     * Change the window to focus the given scene, triggering an update
+     * of its size to match the window's, and rendering it for each
+     * frame as long as it is the scene set in this window */
+    void flipToScene(Scene *newScene);
+
+    /*
+     * Should be called once per game loop to update window
+     */
+    void update(double secs);
+
+    /*
+     * Should be called once per game loop to render window
+     * and the current scene, if one is present
+     */
+    void renderFrame();
+
  private:
     
     /* Meat and potatoes of both possible constructors lives here */
@@ -63,6 +82,12 @@ class Window {
 
     /* The underlying raylib window instance */
     raylib::Window *raylibWindow;
+
+    /* The scene currently being shown in the window */
+    Scene *currentScene;
+
+    /* The Renderer context used by the window */
+    Renderer renderer;
 };
 
 #endif
