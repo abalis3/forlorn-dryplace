@@ -70,7 +70,9 @@ void Window::flipToScene(Scene *newScene)
 
 void Window::update(double secs)
 {
-    /* TODO: check if window resized and notify scene if so */
+    if (raylibWindow->IsResized() && currentScene != nullptr) {
+        currentScene->updateWindowSize(getWidth(), getHeight());
+    }
 }
 
 void Window::renderFrame()
