@@ -1,6 +1,7 @@
 #include "Window.h"
 
 #define WINDOW_TITLE "Forbidden Desert"
+#define FPS_FONT_SIZE_DENOMINATOR 15   // (1 / x) of window height
 
 Window::Window()
 {
@@ -35,6 +36,8 @@ void Window::constructWindow(const struct WindowConfiguration *config)
             config->windowHeight, WINDOW_TITLE);
 
     currentScene = nullptr;
+    showingFPS = false;
+    fpsFontSize = getHeight() / FPS_FONT_SIZE_DENOMINATOR;
 }
 
 Window::~Window()
@@ -72,6 +75,10 @@ void Window::update(double secs)
 {
     if (raylibWindow->IsResized() && currentScene != nullptr) {
         currentScene->updateWindowSize(getWidth(), getHeight());
+        fpsFontSize = getHeight() / FPS_FONT_SIZE_DENOMINATOR;
+    }
+    if (IsKeyPressed(KEY_ZERO)) {
+        showingFPS = !showingFPS;
     }
 }
 
@@ -81,5 +88,19 @@ void Window::renderFrame()
     if (currentScene != nullptr) {
         currentScene->render(&renderer);
     }
+    if (showingFPS) renderFPS();
     renderer.stop();
+}
+
+void Window::renderFPS()
+{
+    int textInset = fpsFontSize / 2;
+    int boxPadding = fpsFontSize / 8;
+    int boxLocation = textInset - boxPadding;
+    renderer.setColor(BLUE);
+    renderer.drawRectangle(boxLocation, textInset,
+            renderer.measureText(std::to_string(getFPS()), fpsFontSize) +
+            2*boxPadding, fpsFontSize);
+    renderer.setColor(GREEN);
+	renderer.drawText(std::to_string(getFPS()), textInset, textInset, fpsFontSize);
 }

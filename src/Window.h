@@ -80,6 +80,9 @@ class Window {
     /* Meat and potatoes of both possible constructors lives here */
     void constructWindow(const struct WindowConfiguration *config);
 
+    /* This function renders the FPS counter in the top left */
+    void renderFPS();
+
     /* The underlying raylib window instance */
     raylib::Window *raylibWindow;
 
@@ -88,6 +91,13 @@ class Window {
 
     /* The Renderer context used by the window */
     Renderer renderer;
+
+    /* True when debug FPS is enabled, false otherwise */
+    bool showingFPS;
+
+    /* Stores the size of the fps debug font based on current window size */
+    int fpsFontSize;
+
 };
 
 #endif

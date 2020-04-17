@@ -43,6 +43,10 @@ class Renderer {
     /* Gets the width in pixels of the rendered text with given font size */
     int measureText(std::string text, int fontSize);
 
+    /* Draw the given texture with no tint and the given src and dst params */
+    void drawTexture(raylib::Texture *tex, float srcX, float srcY, float srcW,
+            float srcH, float dstX, float dstY, float dstW, float dstH);
+
  private:
 
     /* The current color that will be used in drawing operations */
