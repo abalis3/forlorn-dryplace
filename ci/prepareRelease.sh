@@ -22,5 +22,5 @@ cd windows-executable
 mkdir forbidden-desert
 mv forbidden-desert.exe forbidden-desert/forbidden-desert.exe
 cp -r ../res forbidden-desert
-zip forbidden-desert-windows-v$1.zip *
+zip -r forbidden-desert-windows-v$1.zip *
 cd ..
