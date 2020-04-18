@@ -47,6 +47,10 @@ class Renderer {
     void drawTexture(raylib::Texture *tex, float srcX, float srcY, float srcW,
             float srcH, float dstX, float dstY, float dstW, float dstH);
 
+    /* Draw the entire given texture at dst params with given transparency */
+    void drawTexture(raylib::Texture *tex, float dstX, float dstY, float dstW,
+            float dstH, float opacity);
+
  private:
 
     /* The current color that will be used in drawing operations */

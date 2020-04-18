@@ -60,5 +60,14 @@ int Renderer::measureText(std::string text, int fontSize)
 void Renderer::drawTexture(raylib::Texture *tex, float srcX, float srcY,
         float srcW, float srcH, float dstX, float dstY, float dstW, float dstH)
 {
-    tex->Draw(Rectangle{srcX,srcY,srcW,srcH}, Rectangle{dstX,dstY,dstW,dstH}, Vector2{0,0}, 0, WHITE);
+    tex->Draw(Rectangle{srcX,srcY,srcW,srcH}, Rectangle{dstX,dstY,dstW,dstH},
+            Vector2{0,0}, 0, WHITE);
+}
+
+void Renderer::drawTexture(raylib::Texture *tex, float dstX, float dstY, float dstW,
+        float dstH, float opacity)
+{
+    tex->Draw(Rectangle{0,0,(float)tex->GetWidth(),(float)tex->GetHeight()},
+            Rectangle{dstX,dstY,dstW,dstH}, Vector2{0,0}, 0,
+            Color{255,255,255,(unsigned char)(255*opacity)});
 }

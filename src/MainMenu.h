@@ -34,6 +34,8 @@ class MainMenu : public Scene {
     float titleYPos;
     float titleWidth;
     float titleHeight;
+    float titleOpacity;
+    float titleFadeStopwatch;
 
 };
 

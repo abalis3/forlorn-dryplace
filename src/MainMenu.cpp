@@ -2,15 +2,17 @@
 
 #include <iostream>
 
-#define BACKGROUND_IMG_PATH "./res/MainMenu/desert-background.png"
-#define TITLE_IMG_PATH "./res/MainMenu/main-title.png"
+#define BACKGROUND_IMG_PATH "res/MainMenu/desert-background.png"
+#define TITLE_IMG_PATH "res/MainMenu/main-title.png"
 
 #define BG_MAX_SPEED 0.02
 #define BG_MIN_SPEED 0.005
 #define BG_SPEED_CUTOFF 0.05
 
-#define TITLE_TOP_PADDING_PCT 0.1
-#define TITLE_HEIGHT_PCT 0.259
+#define TITLE_TOP_PADDING_PCT 0.09
+#define TITLE_HEIGHT_PCT 0.275
+#define TITLE_FADE_IN_START 0.5
+#define TITLE_FADE_IN_END 3
 
 MainMenu::MainMenu()
 {
@@ -18,6 +20,8 @@ MainMenu::MainMenu()
     titleTexture = new raylib::Texture(TITLE_IMG_PATH);
     bgSrcXPercent = 0;
     bgSrcXPosIncreasing = true;
+    titleOpacity = 0;
+    titleFadeStopwatch = 0;
 }
 
 MainMenu::~MainMenu()
@@ -55,6 +59,19 @@ void MainMenu::update(double secs)
         bgSrcXPosIncreasing = true;
     }
     bgSrcXPos = bgSrcXMax * bgSrcXPercent;
+
+    /* Update opacity of main title for fade in */
+    if (titleFadeStopwatch < TITLE_FADE_IN_END) {
+        titleFadeStopwatch += secs;
+        if (titleFadeStopwatch >= TITLE_FADE_IN_END) {
+            titleOpacity = 1;
+        } else if (titleFadeStopwatch > TITLE_FADE_IN_START) {
+            titleOpacity = (titleFadeStopwatch - TITLE_FADE_IN_START) /
+                    (TITLE_FADE_IN_END - TITLE_FADE_IN_START);
+        }
+    } else {
+        titleOpacity = 1;
+    }
 }
 
 void MainMenu::render(Renderer *renderer)
@@ -62,9 +79,8 @@ void MainMenu::render(Renderer *renderer)
     renderer->drawTexture(bgTexture, bgSrcXPos, 0, bgSrcWidth,
             bgTexture->GetHeight(), 0, 0, getWidth(), getHeight());
 
-    renderer->drawTexture(titleTexture, 0, 0, titleTexture->GetWidth(),
-            titleTexture->GetHeight(), titleXPos, titleYPos, titleWidth,
-            titleHeight);
+    renderer->drawTexture(titleTexture, titleXPos, titleYPos, titleWidth,
+            titleHeight, titleOpacity);
 }
 
 void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
