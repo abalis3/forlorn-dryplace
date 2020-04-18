@@ -19,13 +19,21 @@ class MainMenu : public Scene {
 
     void calculateBgSizeParams();
 
+    void calculateTitleSizeParams();
+
     raylib::Texture *bgTexture;
+    raylib::Texture *titleTexture;
 
     float bgSrcXMax;
     float bgSrcXPercent;
     float bgSrcXPos;
     float bgSrcWidth;
     bool bgSrcXPosIncreasing;
+
+    float titleXPos;
+    float titleYPos;
+    float titleWidth;
+    float titleHeight;
 
 };
 

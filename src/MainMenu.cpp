@@ -3,22 +3,27 @@
 #include <iostream>
 
 #define BACKGROUND_IMG_PATH "./res/MainMenu/desert-background.png"
+#define TITLE_IMG_PATH "./res/MainMenu/main-title.png"
 
 #define BG_MAX_SPEED 0.02
 #define BG_MIN_SPEED 0.005
 #define BG_SPEED_CUTOFF 0.05
 
+#define TITLE_TOP_PADDING_PCT 0.1
+#define TITLE_HEIGHT_PCT 0.259
+
 MainMenu::MainMenu()
 {
     bgTexture = new raylib::Texture(BACKGROUND_IMG_PATH);
+    titleTexture = new raylib::Texture(TITLE_IMG_PATH);
     bgSrcXPercent = 0;
-    bgSrcXPos = 0;
     bgSrcXPosIncreasing = true;
 }
 
 MainMenu::~MainMenu()
 {
     delete bgTexture;
+    delete titleTexture;
 }
 
 void MainMenu::update(double secs)
@@ -56,11 +61,16 @@ void MainMenu::render(Renderer *renderer)
 {
     renderer->drawTexture(bgTexture, bgSrcXPos, 0, bgSrcWidth,
             bgTexture->GetHeight(), 0, 0, getWidth(), getHeight());
+
+    renderer->drawTexture(titleTexture, 0, 0, titleTexture->GetWidth(),
+            titleTexture->GetHeight(), titleXPos, titleYPos, titleWidth,
+            titleHeight);
 }
 
 void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
 {
     calculateBgSizeParams();
+    calculateTitleSizeParams();
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -68,4 +78,13 @@ void MainMenu::calculateBgSizeParams()
     bgSrcWidth = (bgTexture->GetHeight() / (float) getHeight()) * getWidth();
     bgSrcXMax = bgTexture->GetWidth() - bgSrcWidth;
     bgSrcXPos = bgSrcXMax * bgSrcXPercent;
+}
+
+void MainMenu::calculateTitleSizeParams()
+{
+    titleYPos = getHeight() * TITLE_TOP_PADDING_PCT;
+    titleHeight = getHeight() * TITLE_HEIGHT_PCT;
+    titleWidth = (titleHeight / titleTexture->GetHeight()) *
+            titleTexture->GetWidth();
+    titleXPos = (getWidth() - titleWidth) / 2;
 }
