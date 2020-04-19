@@ -2,6 +2,7 @@
 
 #include "Window.h"
 #include "MainMenu.h"
+#include "Util.h"
 
 class GameRunner {
  public:
@@ -42,8 +43,9 @@ void GameRunner::run()
 	}
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+	Util::registerRunArgs(argc, argv);
 	GameRunner runner;
 	runner.run();
     return 0;

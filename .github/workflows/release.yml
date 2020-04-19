@@ -31,7 +31,7 @@ jobs:
     - name: Install dependencies
       run: ./ci/installMacDependencies.sh
     - name: Build executable
-      run: ./mac-build.sh
+      run: ./mac-build.sh CI
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v1
       with:

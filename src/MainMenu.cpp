@@ -1,9 +1,9 @@
 #include "MainMenu.h"
 
-#include <iostream>
+#include "Util.h"
 
-#define BACKGROUND_IMG_PATH "res/MainMenu/desert-background.png"
-#define TITLE_IMG_PATH "res/MainMenu/main-title.png"
+#define BACKGROUND_IMG_PATH "MainMenu/desert-background.png"
+#define TITLE_IMG_PATH "MainMenu/main-title.png"
 
 #define BG_MAX_SPEED 0.02
 #define BG_MIN_SPEED 0.005
@@ -16,8 +16,10 @@
 
 MainMenu::MainMenu()
 {
-    bgTexture = new raylib::Texture(BACKGROUND_IMG_PATH);
-    titleTexture = new raylib::Texture(TITLE_IMG_PATH);
+    bgTexture = new raylib::Texture(
+            Util::formResourcePath(BACKGROUND_IMG_PATH));
+    titleTexture = new raylib::Texture(
+            Util::formResourcePath(TITLE_IMG_PATH));
     bgSrcXPercent = 0;
     bgSrcXPosIncreasing = true;
     titleOpacity = 0;
