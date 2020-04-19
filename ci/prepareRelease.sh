@@ -10,8 +10,10 @@ tar -czpvf forbidden-desert-ubuntu-v$1.tar.gz *
 cd ..
 
 cd macOS-executable
+ls ../ci/mac-app
 cp -r ../ci/mac-app/* .
-mv forbidden-desert Forbidden\ Desert.app/Contents/MacOS/
+ls
+mv forbidden-desert Forbidden\ Desert.app/Contents/MacOS
 chmod +x Forbidden\ Desert.app/Contents/MacOS/forbidden-desert
 cp -r ../res Forbidden\ Desert.app/Contents/MacOS
 tar -czpvf forbidden-desert-macOS-v$1.tar.gz *
