@@ -3,7 +3,8 @@ rmdir /s /q bin
 mkdir bin
 
 if "%*"=="CI" (
-    g++ -m64 -DRAYLIB_CPP_NO_MATH=1 -I raylib/include/ -I include/ -L raylib/lib src/*.cpp -lopengl32 -static -lraylib_static -lpthread -lwinmm -lgdi32 -o bin/forbidden-desert.exe
+    windres ci/windowsicon.rc ci/windowsicon.o
+    g++ -m64 -DRAYLIB_CPP_NO_MATH=1 -I raylib/include/ -I include/ -L raylib/lib ci/windowsicon.o src/*.cpp -lopengl32 -static -lraylib_static -lpthread -lwinmm -lgdi32 -o bin/forbidden-desert.exe
     echo.
     echo Built executable for CI
 ) else (
