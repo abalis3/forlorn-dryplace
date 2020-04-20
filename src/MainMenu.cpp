@@ -2,8 +2,11 @@
 
 #include "Util.h"
 
+#include <iostream>
+
 #define BACKGROUND_IMG_PATH "MainMenu/desert-background.png"
 #define TITLE_IMG_PATH "MainMenu/main-title.png"
+#define ZOOMSELECTOR_IMG_PATH "MainMenu/zoomselector.png"
 
 #define BG_MAX_SPEED 0.02
 #define BG_MIN_SPEED 0.005
@@ -14,12 +17,27 @@
 #define TITLE_FADE_IN_START 0.5
 #define TITLE_FADE_IN_END 3
 
+#define ZOOMSELECTOR_HOVER_RATIO 2.0
+#define ZOOMSELECTOR_ITEM_PAD_PCT 0.04
+#define ZS_MAIN_TOP_POSITION_PCT 0.515
+#define ZS_MAIN_BOT_POSITION_PCT 0.85
+
 MainMenu::MainMenu()
 {
     bgTexture = new raylib::Texture(
             Util::formResourcePath(BACKGROUND_IMG_PATH));
+    bgTexture->GenMipmaps();
     titleTexture = new raylib::Texture(
             Util::formResourcePath(TITLE_IMG_PATH));
+    titleTexture->GenMipmaps();
+    mainZoomSelector = new ZoomSelector(ZOOMSELECTOR_IMG_PATH,
+            ZOOMSELECTOR_HOVER_RATIO);
+
+    mainZoomSelector->addItem(0, 0, 894, 137);
+    mainZoomSelector->addItem(0, 137, 616, 137);
+    mainZoomSelector->addItem(0, 274, 445, 137);
+    mainZoomSelector->addItem(0, 411, 189, 137);
+
     bgSrcXPercent = 0;
     bgSrcXPosIncreasing = true;
     titleOpacity = 0;
@@ -74,6 +92,8 @@ void MainMenu::update(double secs)
     } else {
         titleOpacity = 1;
     }
+
+    mainZoomSelector->update(secs);
 }
 
 void MainMenu::render(Renderer *renderer)
@@ -83,12 +103,25 @@ void MainMenu::render(Renderer *renderer)
 
     renderer->drawTexture(titleTexture, titleXPos, titleYPos, titleWidth,
             titleHeight, titleOpacity);
+
+    mainZoomSelector->render(renderer);
 }
 
 void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
 {
     calculateBgSizeParams();
     calculateTitleSizeParams();
+
+    float mainZoomSelectorHeight = (ZS_MAIN_BOT_POSITION_PCT -
+            ZS_MAIN_TOP_POSITION_PCT) * getHeight();
+    float mainZoomSelectorCenterYPos = ((ZS_MAIN_TOP_POSITION_PCT) *
+            getHeight()) + (mainZoomSelectorHeight / 2);
+    float mainZoomItemPadding = ZOOMSELECTOR_ITEM_PAD_PCT * getHeight();
+
+    std::cout << mainZoomSelectorHeight << std::endl;
+    std::cout << mainZoomSelectorCenterYPos << std::endl;
+    mainZoomSelector->updatePosition(mainZoomSelectorHeight, getWidth() / 2,
+            mainZoomSelectorCenterYPos, mainZoomItemPadding);
 }
 
 void MainMenu::calculateBgSizeParams()

@@ -2,6 +2,7 @@
 #define FD__MAINMENU_H
 
 #include "Scene.h"
+#include "ZoomSelector.h"
 
 class MainMenu : public Scene {
  public:
@@ -31,6 +32,9 @@ class MainMenu : public Scene {
 
     /* Texture for the main title "Forbidden Desert" image */
     raylib::Texture *titleTexture;
+
+    /* Zoom selector for top level menu options */
+    ZoomSelector *mainZoomSelector;
 
     /**********************************************************
      * Fields for tracking for background texture pan animation
