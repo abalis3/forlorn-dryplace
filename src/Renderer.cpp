@@ -64,10 +64,16 @@ void Renderer::drawTexture(raylib::Texture *tex, float srcX, float srcY,
             Vector2{0,0}, 0, WHITE);
 }
 
-void Renderer::drawTexture(raylib::Texture *tex, float dstX, float dstY, float dstW,
-        float dstH, float opacity)
+void Renderer::drawTexture(raylib::Texture *tex, float dstX, float dstY,
+        float dstW, float dstH, float opacity)
 {
     tex->Draw(Rectangle{0,0,(float)tex->GetWidth(),(float)tex->GetHeight()},
             Rectangle{dstX,dstY,dstW,dstH}, Vector2{0,0}, 0,
             Color{255,255,255,(unsigned char)(255*opacity)});
+}
+
+void Renderer::drawTexture(raylib::Texture *tex, const raylib::Rectangle &src,
+    const raylib::Rectangle &dst)
+{
+    tex->Draw(src, dst, Vector2{0,0}, 0, WHITE);
 }

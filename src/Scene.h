@@ -35,6 +35,25 @@ class Scene {
     virtual void onSizeChangedFrom(int oldWidth, int oldHeight) {}
 
     /*
+     * Called on each frame by the Window on the focused Scene so that it can
+     * handle any mouse input to it
+     */
+    virtual void onMousePosUpdate(const raylib::Vector2 &pos) {}
+
+    /*
+     * To be called by the window if a mouse button was pressed to
+     * notify the focused scene so it can handle it
+     */
+    virtual void onMouseButtonPressed(int button, const raylib::Vector2 &pos) {}
+
+    /*
+     * To be called by the window if a mouse button was released to
+     * notify the focused scene so it can handle it
+     */
+    virtual void onMouseButtonReleased(int button,
+            const raylib::Vector2 &pos) {}
+
+    /*
      * To be called by the window when the scene is first shown
      * and whenever the window gets resized, to ensure the scene
      * adjusts its size accordingly

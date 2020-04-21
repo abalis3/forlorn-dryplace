@@ -25,6 +25,12 @@ class MainMenu : public Scene {
      */
     void onSizeChangedFrom(int oldWidth, int oldHeight) override;
 
+    /*
+     * Receives a mouse postiion update from the Window and
+     * forwards the info onto relevant sub-objects
+     */
+    void onMousePosUpdate(const raylib::Vector2 &pos) override;
+
  private:
 
     /* Texture for the background desert image */

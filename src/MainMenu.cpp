@@ -33,10 +33,10 @@ MainMenu::MainMenu()
     mainZoomSelector = new ZoomSelector(ZOOMSELECTOR_IMG_PATH,
             ZOOMSELECTOR_HOVER_RATIO);
 
-    mainZoomSelector->addItem(0, 0, 894, 137);
-    mainZoomSelector->addItem(0, 137, 616, 137);
-    mainZoomSelector->addItem(0, 274, 445, 137);
-    mainZoomSelector->addItem(0, 411, 189, 137);
+    mainZoomSelector->addItem(raylib::Rectangle(0, 0, 894, 137));
+    mainZoomSelector->addItem(raylib::Rectangle(0, 137, 616, 137));
+    mainZoomSelector->addItem(raylib::Rectangle(0, 274, 445, 137));
+    mainZoomSelector->addItem(raylib::Rectangle(0, 411, 189, 137));
 
     bgSrcXPercent = 0;
     bgSrcXPosIncreasing = true;
@@ -138,4 +138,9 @@ void MainMenu::calculateTitleSizeParams()
     titleWidth = (titleHeight / titleTexture->GetHeight()) *
             titleTexture->GetWidth();
     titleXPos = (getWidth() - titleWidth) / 2;
+}
+
+void MainMenu::onMousePosUpdate(const raylib::Vector2 &pos)
+{
+    mainZoomSelector->onMousePosUpdate(pos);
 }

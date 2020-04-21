@@ -73,10 +73,27 @@ void Window::flipToScene(Scene *newScene)
 
 void Window::update(double secs)
 {
-    if (raylibWindow->IsResized() && currentScene != nullptr) {
-        currentScene->updateWindowSize(getWidth(), getHeight());
-        fpsFontSize = getHeight() / FPS_FONT_SIZE_DENOMINATOR;
+    if (currentScene != nullptr) {
+        if (raylibWindow->IsResized()) {
+            currentScene->updateWindowSize(getWidth(), getHeight());
+            fpsFontSize = getHeight() / FPS_FONT_SIZE_DENOMINATOR;
+        }
+        const Vector2 mousePos = mouse.GetPosition();
+        currentScene->onMousePosUpdate(mousePos);
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            currentScene->onMouseButtonPressed(MOUSE_LEFT_BUTTON, mousePos);
+        }
+        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+            currentScene->onMouseButtonPressed(MOUSE_RIGHT_BUTTON, mousePos);
+        }
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            currentScene->onMouseButtonReleased(MOUSE_LEFT_BUTTON, mousePos);
+        }
+        if (IsMouseButtonReleased(MOUSE_RIGHT_BUTTON)) {
+            currentScene->onMouseButtonReleased(MOUSE_RIGHT_BUTTON, mousePos);
+        }
     }
+
     if (IsKeyPressed(KEY_ZERO)) {
         showingFPS = !showingFPS;
     }

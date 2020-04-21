@@ -40,10 +40,17 @@ class ZoomSelector {
      * original texturePath (see constructor) occupies the rectangle defined
      * by these parameters
      */
-    void addItem(int srcX, int srcY, int srcW, int srcH);
+    void addItem(const raylib::Rectangle &srcRect);
 
     /* Update the ZoomSelector with elapsed time since last call */
     void update(double secs);
+
+    /*
+     * Handle mouse position update from window - this function looks for
+     * a collision with each ZoomScroll item to determine if a hover
+     * zoom should take place
+     */ 
+    void onMousePosUpdate(const raylib::Vector2 &pos);
 
     /* Renders the ZoomSelector to the screen */
     void render(Renderer *renderer);
@@ -56,6 +63,9 @@ private:
     /* The max height for the whole ZoomSelector (with hover active) */
     float maxHeight;
 
+    /* The max width of the whole ZoomSelector (used for mouse collisions) */
+    float maxWidth;
+
     /* The ratio specifying optionMaxHeight : optionMinHeight */
     float hoverZoomRatio;
 
@@ -64,28 +74,23 @@ private:
 
     /* The screen coordinates to render the CENTER of the ZoomSelector at */
     float centerXPos;
-    float centerYPos; 
+    float centerYPos;
 
     /* Struct representing a single item in the ZoomSelector */
     struct _item {
         
-        /* 
-         * These 4 pararms are the rectangle containing the content in the
+        /*
+         * The rectangle containing the content in the
          * source texture of this ZoomSelector
          */
-        int srcX;
-        int srcY;
-        int srcW;
-        int srcH;
+        raylib::Rectangle srcRect;
 
-        /*
-         * These 4 params are the destination rectangle on the
-         * screen to render the item to
-         */
-        float dstX;
-        float dstY;
-        float dstW;
-        float dstH;
+        /* The destination rectangle on the screen to render the item to */
+        raylib::Rectangle dstRect;
+
+        /* The collision vertical component on screen for mouse collisions */
+        float collisionY;
+        float collisionH;
 
         /* When this item is its max size (hovered) */
         float maxW;
@@ -94,6 +99,12 @@ private:
         /* When this item is its min size (no hover) */
         float minW;
         float maxX;
+
+        /* Keeps track of the target zoom. 0 = min size, 1 = max size */
+        float targetZoomPercent;
+
+        /* Keeps track of the current zoom. 0 = min size, 1 = max size */
+        float zoomPercent;
 
         /* Linked list pointer (points towards last item in ZoomSelector) */
         struct _item *next;
@@ -114,8 +125,24 @@ private:
     /* The max height for an item (this item is being hovered) */
     float itemMaxHeight;
 
+    /* The animation destination value of expansionCenter */
+    float targetExpansionCenter;
+
+    /* The vertical coordinate from which zoomed items expand outward */
+    float expansionCenter;
+
     /* Calculate sizing of items based on # items, max height, and zoom ratio */
     void recalculateSizeParams();
+
+    /* 
+     * Recursive helper that steps through item list to assign item Y positions
+     * based on current expansion center and heights of each item in list.
+     * If a node exists before listHead AND the bottom Y position of that node
+     * is known, it will be placed in yPos and prevNodeSolved == true.
+     * Returns the determined dstY of listHead.
+     */
+    float populateItemListDstYValues(ZoomSelectorItem *listHead,
+            bool prevNodeSolved, float yPos);
 };
 
 #endif

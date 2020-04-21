@@ -44,12 +44,17 @@ class Renderer {
     int measureText(std::string text, int fontSize);
 
     /* Draw the given texture with no tint and the given src and dst params */
-    void drawTexture(raylib::Texture *tex, float srcX, float srcY, float srcW,
-            float srcH, float dstX, float dstY, float dstW, float dstH);
+    void drawTexture(raylib::Texture *tex, float srcX, float srcY,
+            float srcW, float srcH, float dstX, float dstY, float dstW,
+            float dstH);
 
     /* Draw the entire given texture at dst params with given transparency */
     void drawTexture(raylib::Texture *tex, float dstX, float dstY, float dstW,
             float dstH, float opacity);
+
+    /* Draw the texture from given src rect to given dst rect */
+    void drawTexture(raylib::Texture *tex, const raylib::Rectangle &src,
+            const raylib::Rectangle &dst);
 
  private:
 

@@ -92,6 +92,9 @@ class Window {
     /* The Renderer context used by the window */
     Renderer renderer;
 
+    /* The mouse object to grab mouse events from */
+    raylib::Mouse mouse;
+
     /* True when debug FPS is enabled, false otherwise */
     bool showingFPS;
 
