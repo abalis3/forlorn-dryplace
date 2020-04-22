@@ -2,8 +2,6 @@
 
 #include "Util.h"
 
-#include <iostream>
-
 #define BACKGROUND_IMG_PATH "MainMenu/desert-background.png"
 #define TITLE_IMG_PATH "MainMenu/main-title.png"
 #define ZOOMSELECTOR_IMG_PATH "MainMenu/zoomselector.png"
@@ -17,10 +15,10 @@
 #define TITLE_FADE_IN_START 0.5
 #define TITLE_FADE_IN_END 3
 
-#define ZOOMSELECTOR_HOVER_RATIO 2.0
-#define ZOOMSELECTOR_ITEM_PAD_PCT 0.04
-#define ZS_MAIN_TOP_POSITION_PCT 0.515
-#define ZS_MAIN_BOT_POSITION_PCT 0.85
+#define ZOOMSELECTOR_HOVER_RATIO 1.75
+#define ZOOMSELECTOR_ITEM_PAD_PCT 0.05
+#define ZS_MAIN_TOP_POSITION_PCT 0.435
+#define ZS_MAIN_BOT_POSITION_PCT 0.93
 
 MainMenu::MainMenu()
 {
@@ -33,10 +31,10 @@ MainMenu::MainMenu()
     mainZoomSelector = new ZoomSelector(ZOOMSELECTOR_IMG_PATH,
             ZOOMSELECTOR_HOVER_RATIO);
 
-    mainZoomSelector->addItem(raylib::Rectangle(0, 0, 894, 137));
-    mainZoomSelector->addItem(raylib::Rectangle(0, 137, 616, 137));
-    mainZoomSelector->addItem(raylib::Rectangle(0, 274, 445, 137));
-    mainZoomSelector->addItem(raylib::Rectangle(0, 411, 189, 137));
+    mainZoomSelector->addItem(raylib::Rectangle(0, 0, 894, 137), 60);
+    mainZoomSelector->addItem(raylib::Rectangle(0, 137, 616, 137), 60);
+    mainZoomSelector->addItem(raylib::Rectangle(0, 274, 445, 137), 60);
+    mainZoomSelector->addItem(raylib::Rectangle(0, 411, 189, 137), 60);
 
     bgSrcXPercent = 0;
     bgSrcXPosIncreasing = true;
@@ -117,9 +115,6 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     float mainZoomSelectorCenterYPos = ((ZS_MAIN_TOP_POSITION_PCT) *
             getHeight()) + (mainZoomSelectorHeight / 2);
     float mainZoomItemPadding = ZOOMSELECTOR_ITEM_PAD_PCT * getHeight();
-
-    std::cout << mainZoomSelectorHeight << std::endl;
-    std::cout << mainZoomSelectorCenterYPos << std::endl;
     mainZoomSelector->updatePosition(mainZoomSelectorHeight, getWidth() / 2,
             mainZoomSelectorCenterYPos, mainZoomItemPadding);
 }

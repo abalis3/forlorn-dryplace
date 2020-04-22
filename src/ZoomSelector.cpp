@@ -2,21 +2,27 @@
 
 #include "Util.h"
 
-#include <iostream>
+#define CARAT_IMG_PATH "ZoomScroll/carat.png"
 
-#define ZOOM_ANIM_SPEED 5.0
-#define EXP_CTR_ANIM_SPEED 10
+#define ANIMATION_DURATION 0.1
+#define CARAT_HEIGHT_FRACTION 0.15
+#define CARAT_DISTANCE_FRACTION 0.8
 
 ZoomSelector::ZoomSelector(const std::string &texturePath, float hoverZoomRatio)
 {
     contentTexture = new raylib::Texture(Util::formResourcePath(texturePath));
     contentTexture->GenMipmaps();
+    caratTexture = new raylib::Texture(Util::formResourcePath(CARAT_IMG_PATH));
+    caratTexture->GenMipmaps();
     itemListHead = itemListTail = nullptr;
     this->hoverZoomRatio = hoverZoomRatio;
-    this->itemPadding = 0;
+    this->minItemPadding = 0;
+    this->maxItemPadding = 0;
     this->maxHeight = 0;
     this->centerXPos = 0;
     this->centerYPos = 0;
+    this->focusedIndex = -1;
+    this->animStopwatch = ANIMATION_DURATION;
     numItems = 0;
 }
 
@@ -33,21 +39,22 @@ ZoomSelector::~ZoomSelector()
 }
 
 void ZoomSelector::updatePosition(float maxHeight, float centerXPos,
-        float centerYPos, float itemPadding)
+        float centerYPos, float minItemPadding)
 {
     this->maxHeight = maxHeight;
     this->centerXPos = centerXPos;
     this->centerYPos = centerYPos;
-    this->itemPadding = itemPadding;
+    this->minItemPadding = minItemPadding;
     this->expansionCenter = centerYPos;
     recalculateSizeParams();
 }
 
-void ZoomSelector::addItem(const raylib::Rectangle &srcRect)
+void ZoomSelector::addItem(const raylib::Rectangle &srcRect, float itemCenterY)
 {
     ZoomSelectorItem *newItem = new ZoomSelectorItem();
     
     newItem->srcRect = srcRect;
+    newItem->itemCenterY = itemCenterY;
     newItem->targetZoomPercent = 0;
     newItem->zoomPercent = 0;
 
@@ -67,23 +74,26 @@ void ZoomSelector::recalculateSizeParams()
 {
     if (numItems == 0) return;
 
+    maxItemPadding = hoverZoomRatio * minItemPadding;
+
     float halfZoomRatio = 1 + ((hoverZoomRatio - 1) / 2);
 
     /* Measure the max height in unit of min item heights */
     float heightInMinItemHeights = hoverZoomRatio; // Hovered item
+    float maxPaddingHeight = maxItemPadding;
     if (numItems <= 3) {
         /* Adjacent to hovered items */
         heightInMinItemHeights += halfZoomRatio * (numItems - 1);
+        maxPaddingHeight += halfZoomRatio * (numItems - 1) * minItemPadding;
     } else {
         heightInMinItemHeights += halfZoomRatio * 2; // Adjacent to hovered
+        maxPaddingHeight += halfZoomRatio * 2 * minItemPadding;
         heightInMinItemHeights += numItems - 3; // Not zoomed from hover
+        maxPaddingHeight += minItemPadding * (numItems - 3);
     }
 
     /* Get available max height to occupy, minus space for padding */
-    float heightWithoutPadding = maxHeight;
-    if (numItems > 1) {
-        heightWithoutPadding -= itemPadding * (numItems - 1);
-    }
+    float heightWithoutPadding = maxHeight - maxPaddingHeight;
 
     /* Now extract min item and max item heights */
     itemMinHeight = heightWithoutPadding / heightInMinItemHeights;
@@ -91,8 +101,8 @@ void ZoomSelector::recalculateSizeParams()
 
     /* Set up constant size-dependent values for each item in the item list */
     maxWidth = 0;
-    float totalMinHeight = numItems * (itemMinHeight + itemPadding);
-    float curYPos = centerYPos - (totalMinHeight / 2) - (itemPadding / 2);
+    float totalMinHeight = numItems * (itemMinHeight + minItemPadding);
+    float curYPos = centerYPos - (totalMinHeight / 2);
     ZoomSelectorItem *curItem = itemListHead;
     while (curItem != nullptr) {
         
@@ -102,7 +112,7 @@ void ZoomSelector::recalculateSizeParams()
         curItem->maxX = centerXPos - (curItem->minW / 2);
 
         curItem->collisionY = curYPos;
-        curItem->collisionH = itemMinHeight + itemPadding;
+        curItem->collisionH = itemMinHeight + minItemPadding;
         curYPos += curItem->collisionH;
 
         /* Find overall width of the zoom selector */
@@ -116,45 +126,48 @@ void ZoomSelector::recalculateSizeParams()
 
 void ZoomSelector::update(double secs)
 {
-    /* TODO: make this vary with size */
-    /*if (expansionCenter > targetExpansionCenter) {
-        expansionCenter -= EXP_CTR_ANIM_SPEED * secs;
-        if (expansionCenter < targetExpansionCenter) expansionCenter = targetExpansionCenter;
-    } else if (expansionCenter < targetExpansionCenter) {
-        expansionCenter += EXP_CTR_ANIM_SPEED * secs;
-        if (expansionCenter > targetExpansionCenter) expansionCenter = targetExpansionCenter;
-    }*/
-    expansionCenter = targetExpansionCenter;
-    std::cout << expansionCenter << std::endl;
+    /* Should we update animations? */
+    bool animate = false;
+    /* What pct to move from val to targetVal? 0 = none, 1 = all the way */
+    double animationFraction = 0;
+    if (animStopwatch < ANIMATION_DURATION) {
+        animate = true;
+        double lastTime = animStopwatch;
+        animStopwatch += secs;
+        if (animStopwatch >= ANIMATION_DURATION) {
+            animationFraction = 1;
+        } else {
+            animationFraction = secs / (ANIMATION_DURATION - lastTime);
+        }
+    }
+    
+    /* Animate the expansionCenter */
+    if (animate) {
+        expansionCenter += animationFraction * (targetExpansionCenter - expansionCenter);
+    }
 
+    /* Loop through list to calculate zoom and size of each item */
     ZoomSelectorItem *curItem = itemListHead;
     while (curItem != nullptr) {
         
-        /* Update zoom percent */
-        if (curItem->zoomPercent > curItem->targetZoomPercent) {
-            curItem->zoomPercent -= ZOOM_ANIM_SPEED * secs;
-            if (curItem->zoomPercent < curItem->targetZoomPercent)
-                    curItem->zoomPercent = curItem->targetZoomPercent;
-        } else if (curItem->zoomPercent < curItem->targetZoomPercent) {
-            curItem->zoomPercent += ZOOM_ANIM_SPEED * secs;
-            if (curItem->zoomPercent > curItem->targetZoomPercent)
-                    curItem->zoomPercent = curItem->targetZoomPercent;
+        /* Update animation for zoom percent for this item */
+        if (animate) {
+            curItem->zoomPercent += animationFraction *
+                    (curItem->targetZoomPercent - curItem->zoomPercent);
         }
         
-        /* Update destination parameters based on zoom. Must do dst Y later */
-        curItem->dstRect.x = curItem->maxX;// -
-                //(curItem->maxX - curItem->minX) * curItem->zoomPercent;
-        curItem->dstRect.width = curItem->minW;// +
-                //(curItem->maxW - curItem->minW) * curItem->zoomPercent;
-        curItem->dstRect.height = itemMinHeight;// +
-                //(itemMaxHeight - itemMinHeight) * curItem->zoomPercent;
+        /* Update destination/size parameters based on zoom. Must do dst Y later */
+        curItem->dstRect.x = curItem->maxX -
+                (curItem->maxX - curItem->minX) * curItem->zoomPercent;
+        curItem->dstRect.width = curItem->minW +
+                (curItem->maxW - curItem->minW) * curItem->zoomPercent;
+        curItem->dstRect.height = itemMinHeight +
+                (itemMaxHeight - itemMinHeight) * curItem->zoomPercent;
+        curItem->padding = minItemPadding +
+                (maxItemPadding - minItemPadding) * curItem->zoomPercent;
 
         curItem = curItem->next;
     }
-
-    itemListHead->next->dstRect.height = itemMaxHeight;
-    itemListHead->next->dstRect.x = itemListHead->next->minX;
-    itemListHead->next->dstRect.width = itemListHead->next->maxW;
 
     /* Populate dst Y values now that we have item heights and expansion center */
     populateItemListDstYValues(itemListHead, false, 0);
@@ -167,50 +180,34 @@ float ZoomSelector::populateItemListDstYValues(ZoomSelectorItem *listHead,
     if (listHead == nullptr) return -1;
 
     if (prevNodeSolved) {
-        /* From here on out it's easy, everything is solved */
-        listHead->dstRect.y = yPos + itemPadding; // We got the BOTTOM of prev
+        /* From here on out it's easy, everything is solved. */
+        /* We got the bottom of the previous node's padding */
+        listHead->dstRect.y = yPos + listHead->padding / 2;
         return populateItemListDstYValues(listHead->next, true,
-                listHead->dstRect.y + listHead->dstRect.height);
+                yPos + listHead->dstRect.height + listHead->padding);
     } else {
-        /* Is the expansionCenter in this node? */
+        /* Is the expansionCenter in this node (including its padding)? */
         if (expansionCenter >= listHead->collisionY &&
                 (expansionCenter <= listHead->collisionY + listHead->collisionH)) {
 
-            /* Got it! Let's work outward from here */
-            float bottomOfItem;
-            if (expansionCenter - listHead->collisionY < itemPadding / 2) {
+            float totalItemHeight = listHead->dstRect.height + listHead->padding;
+            float itemBeforeExpCtr = (expansionCenter - listHead->collisionY) *
+                    (totalItemHeight / (listHead->collisionH));
+            float topOfItem = expansionCenter - itemBeforeExpCtr;
+            listHead->dstRect.y = topOfItem + listHead->padding / 2;
+            float bottomOfItem = topOfItem + listHead->dstRect.height + listHead->padding;
 
-                /* It's in the padding before this item */
-                listHead->dstRect.y = listHead->collisionY + (itemPadding / 2);
-                bottomOfItem = listHead->dstRect.y + listHead->dstRect.height;
 
-            } else if (expansionCenter > listHead->collisionY + listHead->dstRect.height) {
-
-                /* It's in the padding after this item */
-                bottomOfItem = listHead->collisionY + listHead->collisionH - (itemPadding / 2);
-                listHead->dstRect.y = bottomOfItem - listHead->dstRect.height;
-
-            } else {
-
-                /* Rats - it's in the middle of the scaled image */
-                float imgStart = listHead->collisionY + (itemPadding / 2);
-                float imgBeforeExpCtr = (expansionCenter - imgStart) *
-                        (listHead->dstRect.height / itemMinHeight);
-                listHead->dstRect.y = expansionCenter - imgBeforeExpCtr;
-                bottomOfItem = listHead->dstRect.y + listHead->dstRect.height;
-
-            }
-
-            /* Call forward and return our value, now those around can propagate the info */
+            /* Call forward and return our top y coord (before our padding starts) */
             populateItemListDstYValues(listHead->next, true, bottomOfItem);
-            return listHead->dstRect.y;
+            return topOfItem;
         
         } else {
             /* We don't have the expansionCenter and it's in a later node */
             float nextY = populateItemListDstYValues(listHead->next, false, 0);
             /* BUG? Do we need to make sure we found the expansionCenter by checking for -1? */
-            nextY -= listHead->dstRect.height + itemPadding;
-            listHead->dstRect.y = nextY;
+            nextY -= listHead->dstRect.height + listHead->padding;
+            listHead->dstRect.y = nextY + listHead->padding / 2;
             return nextY;
         }
     }
@@ -219,8 +216,13 @@ float ZoomSelector::populateItemListDstYValues(ZoomSelectorItem *listHead,
 void ZoomSelector::onMousePosUpdate(const raylib::Vector2 &pos)
 {
     raylib::Rectangle hitbox;
-    hitbox.x = centerXPos - (maxWidth / 2);
-    hitbox.width = maxWidth;
+    hitbox.width = maxWidth + maxItemPadding;
+    hitbox.x = centerXPos - (hitbox.width / 2);
+
+    /* Did the item being hovered change? If so we will start an animation */
+    int lastFocusedIndex = focusedIndex;
+    int curIndex = 0;
+    focusedIndex = -1;
 
     targetExpansionCenter = centerYPos;
     bool shouldHalfZoomNext = false;
@@ -232,8 +234,9 @@ void ZoomSelector::onMousePosUpdate(const raylib::Vector2 &pos)
         hitbox.y = curItem->collisionY;
         hitbox.height = curItem->collisionH;
         
-        /* For a found collision, zoom current item, prev, and next */
         if (hitbox.CheckCollision(pos)) {
+            /* For a found collision, zoom current and last item and set the expansionCenter */
+            focusedIndex = curIndex;
             curItem->targetZoomPercent = 1.0;
             targetExpansionCenter = curItem->collisionY +
                 (curItem->collisionH / 2);
@@ -242,25 +245,54 @@ void ZoomSelector::onMousePosUpdate(const raylib::Vector2 &pos)
             }
             shouldHalfZoomNext = true;
         } else if (shouldHalfZoomNext) {
+            /* The last item was focused, half-zoom this one */
             curItem->targetZoomPercent = 0.5;
             shouldHalfZoomNext = false;
         } else {
             curItem->targetZoomPercent = 0;
         }
 
+        curIndex++;
         prevItem = curItem;
         curItem = curItem->next;
     }
+
+    /* Focus/hover changed - start animating to the new targets */
+    if (lastFocusedIndex != focusedIndex) {
+        animStopwatch = 0;
+    }
+
 }
 
 void ZoomSelector::render(Renderer *renderer)
 {
+    int curIndex = 0;
     ZoomSelectorItem *curItem = itemListHead;
 
     while (curItem != nullptr) {
-        DrawLine(0, 600, 1920, 600, GREEN);
+
         renderer->drawTexture(contentTexture, curItem->srcRect,
                 curItem->dstRect);
+
+        if(curIndex++ == focusedIndex) {
+
+            /* This is the selected item. calculate where to draw carats */    
+            float caratDist = CARAT_DISTANCE_FRACTION * itemMaxHeight;
+            float caratHeight = CARAT_HEIGHT_FRACTION * itemMaxHeight;
+            float caratStartY = curItem->dstRect.y  + 
+                    (curItem->itemCenterY / curItem->srcRect.height) * curItem->dstRect.height -
+                    caratHeight / 2;
+            float caratWidth = caratTexture->width * (caratHeight / caratTexture->height);
+            float caratX1 = curItem->dstRect.x - caratWidth - caratDist;
+            float caratX2 = curItem->dstRect.x + curItem->dstRect.width + caratDist;
+
+            /* Render the carats - note the first one with negative width to flip the image */
+            renderer->drawTexture(caratTexture, caratX1, caratStartY, caratWidth, caratHeight,
+                    true);
+            renderer->drawTexture(caratTexture, caratX2, caratStartY, caratWidth, caratHeight,
+                    false);
+        }
+
         curItem = curItem->next;
     }
 }

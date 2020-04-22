@@ -30,17 +30,19 @@ class ZoomSelector {
      * Call to set the position parameters of the Zoom Selector
      * maxHeight - the sizing of the ZoomSelector should be such that this is
      * the maximum height possible (occurs when hovering an item in the middle)
-     * itemPadding - the padding (in pixels) between each item in the selector.
+     * minItemPadding - the padding (in pixels) between each item in the selector when it is
+     * zoomed out all the way. This value scales with zooming of each item.
      */
     void updatePosition(float maxHeight, float centerXPos, float centerYPos,
-            float itemPadding);
+            float minItemPadding);
 
     /* 
      * Adds an item (in-order) to the zoom selector whose content in the
      * original texturePath (see constructor) occupies the rectangle defined
-     * by these parameters
+     * by these parameters. The itemCenter is a value in the range 
+     * 0 -> (srcRect.y + srcRect.height) and represents where the visual center for the carat is
      */
-    void addItem(const raylib::Rectangle &srcRect);
+    void addItem(const raylib::Rectangle &srcRect, float itemCenterY);
 
     /* Update the ZoomSelector with elapsed time since last call */
     void update(double secs);
@@ -60,6 +62,9 @@ private:
     /* Texture containing the content of all items in this ZoomSelector */
     raylib::Texture *contentTexture;
 
+    /* Texture containing the carat shown on either side of the selected item */
+    raylib::Texture *caratTexture;
+
     /* The max height for the whole ZoomSelector (with hover active) */
     float maxHeight;
 
@@ -70,7 +75,8 @@ private:
     float hoverZoomRatio;
 
     /* The number of pixels of padding between two items on the screen */
-    float itemPadding;
+    float minItemPadding;
+    float maxItemPadding;
 
     /* The screen coordinates to render the CENTER of the ZoomSelector at */
     float centerXPos;
@@ -85,9 +91,15 @@ private:
          */
         raylib::Rectangle srcRect;
 
+        /* The visual center of this item where carats should be placed when hovered */
+        float itemCenterY;
+
         /* The destination rectangle on the screen to render the item to */
         raylib::Rectangle dstRect;
-
+        
+        /* The current vertical padding amount in pixels for this item */
+        float padding;
+        
         /* The collision vertical component on screen for mouse collisions */
         float collisionY;
         float collisionH;
@@ -119,6 +131,9 @@ private:
     /* The number of items in this ZoomSelector */
     int numItems;
 
+    /* Index of the last item hovered in the ZoomSelector */
+    int focusedIndex;
+
     /* The min height for an item (not near a hovered item) */
     float itemMinHeight;
 
@@ -131,6 +146,9 @@ private:
     /* The vertical coordinate from which zoomed items expand outward */
     float expansionCenter;
 
+    /* The amount of time passed since an animation was last triggered */
+    double animStopwatch;
+
     /* Calculate sizing of items based on # items, max height, and zoom ratio */
     void recalculateSizeParams();
 
@@ -139,7 +157,7 @@ private:
      * based on current expansion center and heights of each item in list.
      * If a node exists before listHead AND the bottom Y position of that node
      * is known, it will be placed in yPos and prevNodeSolved == true.
-     * Returns the determined dstY of listHead.
+     * Returns the top y coordinate of listHead (top of its upper padding).
      */
     float populateItemListDstYValues(ZoomSelectorItem *listHead,
             bool prevNodeSolved, float yPos);

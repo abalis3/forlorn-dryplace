@@ -72,6 +72,15 @@ void Renderer::drawTexture(raylib::Texture *tex, float dstX, float dstY,
             Color{255,255,255,(unsigned char)(255*opacity)});
 }
 
+void Renderer::drawTexture(raylib::Texture *tex, float dstX, float dstY,
+        float dstW, float dstH, bool flipX)
+{
+    float srcW = (float) tex->GetWidth();
+    if (flipX) srcW *= -1;
+    tex->Draw(Rectangle{0,0,srcW,(float)tex->GetHeight()},
+            Rectangle{dstX,dstY,dstW,dstH}, Vector2{0,0}, 0, WHITE);
+}
+
 void Renderer::drawTexture(raylib::Texture *tex, const raylib::Rectangle &src,
     const raylib::Rectangle &dst)
 {
