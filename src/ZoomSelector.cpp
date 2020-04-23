@@ -29,6 +29,7 @@ ZoomSelector::ZoomSelector(const std::string &texturePath, float hoverZoomRatio)
 ZoomSelector::~ZoomSelector()
 {
     delete contentTexture;
+    delete caratTexture;
 
     /* Clear out list of items */
     while(itemListHead != nullptr) {
