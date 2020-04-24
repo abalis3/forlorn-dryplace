@@ -23,6 +23,7 @@ ZoomSelector::ZoomSelector(const std::string &texturePath, float hoverZoomRatio)
     this->centerYPos = 0;
     this->focusedIndex = -1;
     this->animStopwatch = ANIMATION_DURATION;
+    this->callback = nullptr;
     numItems = 0;
 }
 
@@ -69,6 +70,11 @@ void ZoomSelector::addItem(const raylib::Rectangle &srcRect, float itemCenterY)
 
     numItems++;
     recalculateSizeParams();
+}
+
+void ZoomSelector::setCallback(std::function<void(ZoomSelector*, int)> cb)
+{
+    callback = cb;
 }
 
 void ZoomSelector::recalculateSizeParams()
@@ -263,6 +269,13 @@ void ZoomSelector::onMousePosUpdate(const raylib::Vector2 &pos)
         animStopwatch = 0;
     }
 
+}
+
+void ZoomSelector::onMousePressed()
+{
+    if (callback != nullptr && focusedIndex >= 0) {
+        callback(this, focusedIndex);
+    }
 }
 
 void ZoomSelector::render(Renderer *renderer)

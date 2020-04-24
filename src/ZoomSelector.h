@@ -2,6 +2,7 @@
 #define FD__ZOOMSELECTOR_H
 
 #include <string>
+#include <functional>
 #include <raylib/raylib.hpp>
 
 #include "Renderer.h"
@@ -44,6 +45,13 @@ class ZoomSelector {
      */
     void addItem(const raylib::Rectangle &srcRect, float itemCenterY);
 
+    /*
+     * Registers the given function as a callback for when an item is clicked.
+     * The given function will receive a pointer to this ZoomSelector that generated the
+     * event and the index of the item that was clicked.
+     */
+    void setCallback(std::function<void(ZoomSelector*, int)> cb);
+
     /* Update the ZoomSelector with elapsed time since last call */
     void update(double secs);
 
@@ -53,6 +61,13 @@ class ZoomSelector {
      * zoom should take place
      */ 
     void onMousePosUpdate(const raylib::Vector2 &pos);
+
+    /*
+     * Handle a mouse click event - the click is assumed to have occurred where the mouse
+     * was when the mouse position was last updated with onMousePosUpdate. If the click
+     * occurred on an item and a callback is registered, it will be called.
+     */
+    void onMousePressed();
 
     /* Renders the ZoomSelector to the screen */
     void render(Renderer *renderer);
@@ -133,6 +148,9 @@ private:
 
     /* Index of the last item hovered in the ZoomSelector */
     int focusedIndex;
+
+    /* Callback function that will be called when an item is clicked */
+    std::function<void(ZoomSelector*, int)> callback;
 
     /* The min height for an item (not near a hovered item) */
     float itemMinHeight;
