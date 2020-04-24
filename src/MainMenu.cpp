@@ -20,6 +20,8 @@
 #define ZS_MAIN_TOP_POSITION_PCT 0.435
 #define ZS_MAIN_BOT_POSITION_PCT 0.93
 
+using namespace std::placeholders;
+
 MainMenu::MainMenu()
 {
     bgTexture = new raylib::Texture(
@@ -35,11 +37,13 @@ MainMenu::MainMenu()
     mainZoomSelector->addItem(raylib::Rectangle(0, 137, 616, 137), 60);
     mainZoomSelector->addItem(raylib::Rectangle(0, 274, 445, 137), 60);
     mainZoomSelector->addItem(raylib::Rectangle(0, 411, 189, 137), 60);
+    mainZoomSelector->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
 
     bgSrcXPercent = 0;
     bgSrcXPosIncreasing = true;
     titleOpacity = 0;
     titleFadeStopwatch = 0;
+    nextExecutionUpdate = ExecutionUpdate::KEEP_RUNNING;
 }
 
 MainMenu::~MainMenu()
@@ -138,4 +142,35 @@ void MainMenu::calculateTitleSizeParams()
 void MainMenu::onMousePosUpdate(const raylib::Vector2 &pos)
 {
     mainZoomSelector->onMousePosUpdate(pos);
+}
+
+MainMenu::ExecutionUpdate MainMenu::getExecutionUpdate()
+{
+    return nextExecutionUpdate;
+}
+
+void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
+{
+    if (button == MOUSE_LEFT_BUTTON) {
+        mainZoomSelector->onMousePressed();
+    }
+}
+
+void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
+{
+    if (source == mainZoomSelector) {
+        switch(index) {
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            nextExecutionUpdate = ExecutionUpdate::EXIT_PROGRAM;
+            break;
+        default:
+            break;
+        }
+    }
 }

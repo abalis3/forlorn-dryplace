@@ -54,6 +54,9 @@ void GameRunner::run()
 		lastTime += elapsedTime;
 		window->update(elapsedTime);
 		mainMenu->update(elapsedTime);
+		if (mainMenu->getExecutionUpdate() == MainMenu::ExecutionUpdate::EXIT_PROGRAM){
+			break;
+		}
 
 		/* Render the window */
 		window->renderFrame();

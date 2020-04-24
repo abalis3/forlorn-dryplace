@@ -7,6 +7,12 @@
 class MainMenu : public Scene {
  public:
 
+    /* States that will be given to the game runner to tell it when to move from this scene */
+    enum class ExecutionUpdate {
+        KEEP_RUNNING,
+        EXIT_PROGRAM,
+    };
+
     /* Default constructor - inits necessary values and loads textures */ 
     MainMenu();
 
@@ -31,7 +37,19 @@ class MainMenu : public Scene {
      */
     void onMousePosUpdate(const raylib::Vector2 &pos) override;
 
+    /*
+     * Receives a mouse button press event from the window and forwards
+     * it to relevant sub-objects
+     */
+    void onMouseButtonPressed(int button, const raylib::Vector2 &pos) override;
+
+    /* Called by the Game runner to see if the scene should keep running or transition */
+    ExecutionUpdate getExecutionUpdate();
+
  private:
+
+    /* Stores the next execution update that will be conveyed to the game runner */
+    ExecutionUpdate nextExecutionUpdate;
 
     /* Texture for the background desert image */
     raylib::Texture *bgTexture;
@@ -97,6 +115,9 @@ class MainMenu : public Scene {
      * Called when scene dimensions are set or updated
      */
     void calculateTitleSizeParams();
+
+    /* Callback to be registered for when a ZoomSelector gets clicked */
+    void onZoomSelectorClicked(ZoomSelector *source, int index);
 
 };
 
