@@ -6,6 +6,7 @@
 #include <raylib/raylib.hpp>
 
 #include "Renderer.h"
+#include "OpacityDependent.h"
 
 /*
  * ZoomSelector is a class describing a group of clickable options that will
@@ -13,7 +14,7 @@
  * magnify effect implemented by the dock on the bottom of osx desktops.
  * It is intended for use on each screen of the main menu in Forbidden Desert
  */
-class ZoomSelector {
+class ZoomSelector : public OpacityDependent {
  public:
 
     /* 

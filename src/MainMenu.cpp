@@ -20,6 +20,7 @@
 #define ZS_MAIN_TOP_POSITION_PCT 0.435
 #define ZS_MAIN_BOT_POSITION_PCT 0.93
 
+/* For std::bind _1, _2 ... */
 using namespace std::placeholders;
 
 MainMenu::MainMenu()
