@@ -8,7 +8,7 @@ class MainMenu : public Scene {
  public:
 
     /* States that will be given to the game runner to tell it when to move from this scene */
-    enum class ExecutionUpdate {
+    enum class ReturnCode {
         KEEP_RUNNING,
         EXIT_PROGRAM,
     };
@@ -44,12 +44,22 @@ class MainMenu : public Scene {
     void onMouseButtonPressed(int button, const raylib::Vector2 &pos) override;
 
     /* Called by the Game runner to see if the scene should keep running or transition */
-    ExecutionUpdate getExecutionUpdate();
+    ReturnCode getReturnCode();
 
  private:
 
+    /* States corresponding to the current sub-menu being displayed by the main menu */\
+    enum class State {
+        INITIAL_FADE,
+        FADE_TRANSITION,
+        SHOW_TOPLEVEL,
+    };
+
+    /* Stores the current State being shown by the menu */
+    State currentState;
+
     /* Stores the next execution update that will be conveyed to the game runner */
-    ExecutionUpdate nextExecutionUpdate;
+    ReturnCode nextReturnCode;
 
     /* Texture for the background desert image */
     raylib::Texture *bgTexture;
@@ -58,11 +68,11 @@ class MainMenu : public Scene {
     raylib::Texture *titleTexture;
 
     /* Zoom selector for top level menu options */
-    ZoomSelector *mainZoomSelector;
+    ZoomSelector *toplevelZoomSel;
 
-    /**********************************************************
-     * Fields for tracking for background texture pan animation
-     **********************************************************/
+    /************************************************************
+     * Fields for tracking for background texture pan animation *
+     ************************************************************/
 
     /*
      * The max x coordinate to sample from off the background image
@@ -85,9 +95,9 @@ class MainMenu : public Scene {
     /* True if background appears sliding to the left, false if going right */
     bool bgSrcXPosIncreasing;
 
-    /*******************************************************************
-     * Fields for tracking size and fade-in animation of main title text
-     *******************************************************************/
+    /*********************************************************************
+     * Fields for tracking size and fade-in animation of main title text *
+     *********************************************************************/
 
     /* 
      * These 4 properties specify the destination rectangle on the screen
@@ -98,11 +108,11 @@ class MainMenu : public Scene {
     float titleWidth;
     float titleHeight;
     
-    /* Between 0 and 1 - The current opacity of the title during its fade-in */
+    /* Between 0 and 1 - The current opacity of the main title */
     float titleOpacity;
 
     /* Time elapsed accumulator to track how far into title fade-in we are */
-    float titleFadeStopwatch;
+    float fadeStopwatch;
 
     /* 
      * Calculates the size/position parameters for the background image

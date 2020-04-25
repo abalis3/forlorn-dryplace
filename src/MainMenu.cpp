@@ -2,56 +2,74 @@
 
 #include "Util.h"
 
-#define BACKGROUND_IMG_PATH "MainMenu/desert-background.png"
-#define TITLE_IMG_PATH "MainMenu/main-title.png"
-#define ZOOMSELECTOR_IMG_PATH "MainMenu/zoomselector.png"
+/* Filepaths for external resources */
+static const char BACKGROUND_IMG_PATH[] = "MainMenu/desert-background.png";
+static const char TITLE_IMG_PATH[] = "MainMenu/main-title.png";
+static const char ZOOMSELECTOR_IMG_PATH[] = "MainMenu/zoomselector.png";
 
-#define BG_MAX_SPEED 0.02
-#define BG_MIN_SPEED 0.005
-#define BG_SPEED_CUTOFF 0.05
+/* Background pan animation parameters */
+static const float BG_MAX_SPEED = 0.02;
+static const float BG_MIN_SPEED = 0.005;
+static const float BG_SPEED_CUTOFF = 0.05;
 
-#define TITLE_TOP_PADDING_PCT 0.09
-#define TITLE_HEIGHT_PCT 0.275
-#define TITLE_FADE_IN_START 0.5
-#define TITLE_FADE_IN_END 3
+/* Main title positioning parameters */
+static const float TITLE_TOP_PADDING_PCT = 0.09;
+static const float TITLE_HEIGHT_PCT = 0.275;
 
-#define ZOOMSELECTOR_HOVER_RATIO 1.75
-#define ZOOMSELECTOR_ITEM_PAD_PCT 0.05
-#define ZS_MAIN_TOP_POSITION_PCT 0.435
-#define ZS_MAIN_BOT_POSITION_PCT 0.93
+/* Timing parameters for initial fade-in animation */
+static const float INIT_FADE_START_TIME = 0.5;
+static const float INIT_FADE_END_TIME = 1.5;
+
+/* Parameters common to all menu ZoomSelectors */
+static const float ZS_HOVER_RATIO = 1.75;
+static const float ZS_ITEM_PAD_PCT = 0.05;
+
+/* Toplevel zoom selector parameters */
+static const float TOPLEVEL_ZS_TOP_POS = 0.435;
+static const float TOPLEVEL_ZS_BOT_POS = 0.93;
+
+/* Definitions for positions of particular text entries on the ZoomSelector texture */
+static const int ZS_TEXT_CENTER_Y = 60;
+static const raylib::Rectangle ZS_TEXT_PLAY_LOCAL_GAME(0, 0, 894, 137);
+static const raylib::Rectangle ZS_TEXT_PLAY_ONLINE(0, 137, 616, 137);
+static const raylib::Rectangle ZS_TEXT_SETTINGS(0, 274, 445, 137);
+static const raylib::Rectangle ZS_TEXT_EXIT(0, 411, 189, 137);
 
 /* For std::bind _1, _2 ... */
 using namespace std::placeholders;
 
 MainMenu::MainMenu()
 {
-    bgTexture = new raylib::Texture(
-            Util::formResourcePath(BACKGROUND_IMG_PATH));
-    bgTexture->GenMipmaps();
-    titleTexture = new raylib::Texture(
-            Util::formResourcePath(TITLE_IMG_PATH));
-    titleTexture->GenMipmaps();
-    mainZoomSelector = new ZoomSelector(ZOOMSELECTOR_IMG_PATH,
-            ZOOMSELECTOR_HOVER_RATIO);
-
-    mainZoomSelector->addItem(raylib::Rectangle(0, 0, 894, 137), 60);
-    mainZoomSelector->addItem(raylib::Rectangle(0, 137, 616, 137), 60);
-    mainZoomSelector->addItem(raylib::Rectangle(0, 274, 445, 137), 60);
-    mainZoomSelector->addItem(raylib::Rectangle(0, 411, 189, 137), 60);
-    mainZoomSelector->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
-
+    /* Initialize some fields */
     bgSrcXPercent = 0;
     bgSrcXPosIncreasing = true;
     titleOpacity = 0;
-    titleFadeStopwatch = 0;
-    nextExecutionUpdate = ExecutionUpdate::KEEP_RUNNING;
+    fadeStopwatch = 0;
+    currentState = State::INITIAL_FADE;
+    nextReturnCode = ReturnCode::KEEP_RUNNING;
+
+    /* Load textures for background and main title text */
+    bgTexture = new raylib::Texture(Util::formResourcePath(BACKGROUND_IMG_PATH));
+    bgTexture->GenMipmaps();
+    titleTexture = new raylib::Texture(Util::formResourcePath(TITLE_IMG_PATH));
+    titleTexture->GenMipmaps();
+
+    /* Initialize top level submenu zoom selector */
+    toplevelZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    toplevelZoomSel->addItem(ZS_TEXT_PLAY_LOCAL_GAME, ZS_TEXT_CENTER_Y);
+    toplevelZoomSel->addItem(ZS_TEXT_PLAY_ONLINE, ZS_TEXT_CENTER_Y);
+    toplevelZoomSel->addItem(ZS_TEXT_SETTINGS, ZS_TEXT_CENTER_Y);
+    toplevelZoomSel->addItem(ZS_TEXT_EXIT, ZS_TEXT_CENTER_Y);
+    toplevelZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    toplevelZoomSel->setDependentOpacity(0);
 }
 
 MainMenu::~MainMenu()
 {
     delete bgTexture;
     delete titleTexture;
-}
+    delete toplevelZoomSel;
+}   
 
 void MainMenu::update(double secs)
 {
@@ -59,13 +77,11 @@ void MainMenu::update(double secs)
     float bgVelocity = bgSrcXPosIncreasing ? 1 : -1;
     if (bgSrcXPercent < BG_SPEED_CUTOFF) {
         /* Slowing down with x pos percent close to 0 */
-        bgVelocity *= BG_MIN_SPEED +
-                (bgSrcXPercent / BG_SPEED_CUTOFF) *
+        bgVelocity *= BG_MIN_SPEED + (bgSrcXPercent / BG_SPEED_CUTOFF) *
                 (BG_MAX_SPEED - BG_MIN_SPEED);
     } else if (bgSrcXPercent > (1 - BG_SPEED_CUTOFF)) {
         /* Slowing down with x pos percent close to 1 */
-        bgVelocity *= BG_MIN_SPEED +
-                ((1 - bgSrcXPercent) / BG_SPEED_CUTOFF) *
+        bgVelocity *= BG_MIN_SPEED + ((1 - bgSrcXPercent) / BG_SPEED_CUTOFF) *
                 (BG_MAX_SPEED - BG_MIN_SPEED);
     } else {
         /* Going full speed between the upper and lower cutoffs */
@@ -83,31 +99,56 @@ void MainMenu::update(double secs)
     }
     bgSrcXPos = bgSrcXMax * bgSrcXPercent;
 
-    /* Update opacity of main title for fade in */
-    if (titleFadeStopwatch < TITLE_FADE_IN_END) {
-        titleFadeStopwatch += secs;
-        if (titleFadeStopwatch >= TITLE_FADE_IN_END) {
-            titleOpacity = 1;
-        } else if (titleFadeStopwatch > TITLE_FADE_IN_START) {
-            titleOpacity = (titleFadeStopwatch - TITLE_FADE_IN_START) /
-                    (TITLE_FADE_IN_END - TITLE_FADE_IN_START);
-        }
-    } else {
-        titleOpacity = 1;
-    }
+    /**************************************************
+     * Perform updates specific to current menu state *
+     **************************************************/
+    switch (currentState) {
+    case State::INITIAL_FADE:
 
-    mainZoomSelector->update(secs);
+        /* Update opacity of main title for fade in */
+        fadeStopwatch += secs;
+        if (fadeStopwatch >= INIT_FADE_END_TIME) {
+            titleOpacity = 1;
+            toplevelZoomSel->setDependentOpacity(1);
+            currentState = State::SHOW_TOPLEVEL;
+        } else if (fadeStopwatch > INIT_FADE_START_TIME) {
+            float opacity = (fadeStopwatch - INIT_FADE_START_TIME) /
+                    (INIT_FADE_END_TIME - INIT_FADE_START_TIME);
+            titleOpacity = opacity;
+            toplevelZoomSel->setDependentOpacity(opacity);
+        }
+
+    /* Deliberate fallthrough to update toplevel items too */
+    case State::SHOW_TOPLEVEL:
+
+        toplevelZoomSel->update(secs);
+
+        break;
+    case State::FADE_TRANSITION:
+        break;
+    }
 }
 
 void MainMenu::render(Renderer *renderer)
 {
+    /* Render background and title which are always present */
     renderer->drawTexture(bgTexture, bgSrcXPos, 0, bgSrcWidth,
             bgTexture->GetHeight(), 0, 0, getWidth(), getHeight());
-
     renderer->drawTexture(titleTexture, titleXPos, titleYPos, titleWidth,
             titleHeight, titleOpacity);
 
-    mainZoomSelector->render(renderer);
+    /**************************************************
+     * Render objects dependent on current menu state *
+     **************************************************/
+    switch (currentState) {
+    case State::INITIAL_FADE:
+    /* Deliberate fallthrough to update toplevel items too */
+    case State::SHOW_TOPLEVEL:
+        toplevelZoomSel->render(renderer);
+        break;
+    case State::FADE_TRANSITION:
+        break;
+    }
 }
 
 void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
@@ -115,13 +156,13 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     calculateBgSizeParams();
     calculateTitleSizeParams();
 
-    float mainZoomSelectorHeight = (ZS_MAIN_BOT_POSITION_PCT -
-            ZS_MAIN_TOP_POSITION_PCT) * getHeight();
-    float mainZoomSelectorCenterYPos = ((ZS_MAIN_TOP_POSITION_PCT) *
-            getHeight()) + (mainZoomSelectorHeight / 2);
-    float mainZoomItemPadding = ZOOMSELECTOR_ITEM_PAD_PCT * getHeight();
-    mainZoomSelector->updatePosition(mainZoomSelectorHeight, getWidth() / 2,
-            mainZoomSelectorCenterYPos, mainZoomItemPadding);
+    float zoomSelHeight, zoomSelYPos, zoomSelItemPadding;
+
+    /* Update toplevel ZoomSelector size params */
+    zoomSelHeight = (TOPLEVEL_ZS_BOT_POS - TOPLEVEL_ZS_TOP_POS) * getHeight();
+    zoomSelYPos = ((TOPLEVEL_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
+    zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
+    toplevelZoomSel->updatePosition(zoomSelHeight, getWidth() / 2, zoomSelYPos, zoomSelItemPadding);
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -142,24 +183,41 @@ void MainMenu::calculateTitleSizeParams()
 
 void MainMenu::onMousePosUpdate(const raylib::Vector2 &pos)
 {
-    mainZoomSelector->onMousePosUpdate(pos);
+    switch (currentState) {
+    case State::INITIAL_FADE:
+    /* Update toplevel ZoomSelector size params */
+    case State::SHOW_TOPLEVEL:
+        toplevelZoomSel->onMousePosUpdate(pos);
+        break;
+    case State::FADE_TRANSITION:
+        break;
+    }
 }
 
-MainMenu::ExecutionUpdate MainMenu::getExecutionUpdate()
+MainMenu::ReturnCode MainMenu::getReturnCode()
 {
-    return nextExecutionUpdate;
+    return nextReturnCode;
 }
 
 void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
 {
+    /* Handle left button press event per state of the menu */
     if (button == MOUSE_LEFT_BUTTON) {
-        mainZoomSelector->onMousePressed();
+        switch (currentState) {
+        case State::INITIAL_FADE:
+            break;
+        case State::SHOW_TOPLEVEL:
+            toplevelZoomSel->onMousePressed();
+            break;
+        case State::FADE_TRANSITION:
+            break;
+        }
     }
 }
 
 void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 {
-    if (source == mainZoomSelector) {
+    if (source == toplevelZoomSel) {
         switch(index) {
         case 0:
             break;
@@ -168,7 +226,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         case 2:
             break;
         case 3:
-            nextExecutionUpdate = ExecutionUpdate::EXIT_PROGRAM;
+            nextReturnCode = ReturnCode::EXIT_PROGRAM;
             break;
         default:
             break;

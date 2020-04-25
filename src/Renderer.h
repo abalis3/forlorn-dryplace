@@ -52,13 +52,17 @@ class Renderer {
     void drawTexture(raylib::Texture *tex, float dstX, float dstY, float dstW,
             float dstH, float opacity);
 
-    /* Draw the entire given texture at dst params, and flip horizontally if flipX */
+    /* Draw the entire given texture at dst params, opacity, and flip horizontally if flipX */
     void drawTexture(raylib::Texture *tex, float dstX, float dstY,
-            float dstW, float dstH, bool flipX);
+            float dstW, float dstH, float opacity, bool flipX);
 
     /* Draw the texture from given src rect to given dst rect */
     void drawTexture(raylib::Texture *tex, const raylib::Rectangle &src,
             const raylib::Rectangle &dst);
+
+    /* Draw the texture from given src rect to given dst rect with given opacity */
+    void drawTexture(raylib::Texture *tex, const raylib::Rectangle &src,
+            const raylib::Rectangle &dst, float opacity);
 
  private:
 

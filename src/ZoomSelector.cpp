@@ -285,8 +285,9 @@ void ZoomSelector::render(Renderer *renderer)
 
     while (curItem != nullptr) {
 
+
         renderer->drawTexture(contentTexture, curItem->srcRect,
-                curItem->dstRect);
+                curItem->dstRect, getDependentOpacity());
 
         if(curIndex++ == focusedIndex) {
 
@@ -302,9 +303,9 @@ void ZoomSelector::render(Renderer *renderer)
 
             /* Render the carats - note the first one with negative width to flip the image */
             renderer->drawTexture(caratTexture, caratX1, caratStartY, caratWidth, caratHeight,
-                    true);
+                    getDependentOpacity(), true);
             renderer->drawTexture(caratTexture, caratX2, caratStartY, caratWidth, caratHeight,
-                    false);
+                    getDependentOpacity());
         }
 
         curItem = curItem->next;
