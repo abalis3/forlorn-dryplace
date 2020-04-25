@@ -48,27 +48,14 @@ class MainMenu : public Scene {
 
  private:
 
-    /* States corresponding to the current sub-menu being displayed by the main menu */\
-    enum class State {
-        INITIAL_FADE,
-        FADE_TRANSITION,
-        SHOW_TOPLEVEL,
-    };
-
-    /* Stores the current State being shown by the menu */
-    State currentState;
-
-    /* Stores the next execution update that will be conveyed to the game runner */
-    ReturnCode nextReturnCode;
-
     /* Texture for the background desert image */
     raylib::Texture *bgTexture;
 
     /* Texture for the main title "Forbidden Desert" image */
     raylib::Texture *titleTexture;
 
-    /* Zoom selector for top level menu options */
-    ZoomSelector *toplevelZoomSel;
+    /* Stores the next update that will be conveyed to the game runner */
+    ReturnCode nextReturnCode;
 
     /************************************************************
      * Fields for tracking for background texture pan animation *
@@ -125,6 +112,27 @@ class MainMenu : public Scene {
      * Called when scene dimensions are set or updated
      */
     void calculateTitleSizeParams();
+
+    /****************************************************************
+     * Fields for dealing with submenus and the content within them *
+     ****************************************************************/
+
+    /* States corresponding to the current sub-menu being displayed by the main menu */\
+    enum class State {
+        INITIAL_FADE,
+        FADE_TRANSITION,
+        SHOW_TOPLEVEL,
+        SHOW_SETTINGS,
+    };
+
+    /* Stores the current State being shown by the menu */
+    State currentState;
+
+    /* Zoom selector for top level menu options */
+    ZoomSelector *toplevelZoomSel;
+
+    /* Zoom selector for settings submenu options */
+    ZoomSelector *settingsZoomSel;
 
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);

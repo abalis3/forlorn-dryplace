@@ -20,6 +20,10 @@ static const float TITLE_HEIGHT_PCT = 0.275;
 static const float INIT_FADE_START_TIME = 0.5;
 static const float INIT_FADE_END_TIME = 1.5;
 
+/* Timing parameters for transition fade between submenus */
+static const float TRANS_FADE_OUT_END_TIME = 0.5;
+static const float TRANS_FADE_IN_END_TIME = 0.5;
+
 /* Parameters common to all menu ZoomSelectors */
 static const float ZS_HOVER_RATIO = 1.75;
 static const float ZS_ITEM_PAD_PCT = 0.05;
@@ -27,6 +31,10 @@ static const float ZS_ITEM_PAD_PCT = 0.05;
 /* Toplevel zoom selector parameters */
 static const float TOPLEVEL_ZS_TOP_POS = 0.435;
 static const float TOPLEVEL_ZS_BOT_POS = 0.93;
+
+/* Settings submenu zoom selector parameters */
+static const float SETTINGS_ZS_TOP_POS = 0.65;
+static const float SETTINGS_ZS_BOT_POS = 0.8;
 
 /* Definitions for positions of particular text entries on the ZoomSelector texture */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -40,7 +48,7 @@ using namespace std::placeholders;
 
 MainMenu::MainMenu()
 {
-    /* Initialize some fields */
+    /* Initialize some generic fields */
     bgSrcXPercent = 0;
     bgSrcXPosIncreasing = true;
     titleOpacity = 0;
@@ -54,7 +62,7 @@ MainMenu::MainMenu()
     titleTexture = new raylib::Texture(Util::formResourcePath(TITLE_IMG_PATH));
     titleTexture->GenMipmaps();
 
-    /* Initialize top level submenu zoom selector */
+    /* Initialize top level menu zoom selector */
     toplevelZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
     toplevelZoomSel->addItem(ZS_TEXT_PLAY_LOCAL_GAME, ZS_TEXT_CENTER_Y);
     toplevelZoomSel->addItem(ZS_TEXT_PLAY_ONLINE, ZS_TEXT_CENTER_Y);
@@ -62,6 +70,12 @@ MainMenu::MainMenu()
     toplevelZoomSel->addItem(ZS_TEXT_EXIT, ZS_TEXT_CENTER_Y);
     toplevelZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     toplevelZoomSel->setDependentOpacity(0);
+
+    /* Initialize settings submenu zoom selector */
+    settingsZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    settingsZoomSel->addItem(ZS_TEXT_EXIT, ZS_TEXT_CENTER_Y);
+    settingsZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    settingsZoomSel->setDependentOpacity(1);
 }
 
 MainMenu::~MainMenu()
@@ -69,6 +83,7 @@ MainMenu::~MainMenu()
     delete bgTexture;
     delete titleTexture;
     delete toplevelZoomSel;
+    delete settingsZoomSel;
 }   
 
 void MainMenu::update(double secs)
@@ -124,6 +139,11 @@ void MainMenu::update(double secs)
         toplevelZoomSel->update(secs);
 
         break;
+    case State::SHOW_SETTINGS:
+        
+        settingsZoomSel->update(secs);
+        
+        break;
     case State::FADE_TRANSITION:
         break;
     }
@@ -146,6 +166,9 @@ void MainMenu::render(Renderer *renderer)
     case State::SHOW_TOPLEVEL:
         toplevelZoomSel->render(renderer);
         break;
+    case State::SHOW_SETTINGS:
+        settingsZoomSel->render(renderer);
+        break;
     case State::FADE_TRANSITION:
         break;
     }
@@ -163,6 +186,12 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     zoomSelYPos = ((TOPLEVEL_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
     zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
     toplevelZoomSel->updatePosition(zoomSelHeight, getWidth() / 2, zoomSelYPos, zoomSelItemPadding);
+
+    /* Update toplevel ZoomSelector size params */
+    zoomSelHeight = (SETTINGS_ZS_BOT_POS - SETTINGS_ZS_TOP_POS) * getHeight();
+    zoomSelYPos = ((SETTINGS_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
+    zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
+    settingsZoomSel->updatePosition(zoomSelHeight, getWidth() / 2, zoomSelYPos, zoomSelItemPadding);
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -189,6 +218,9 @@ void MainMenu::onMousePosUpdate(const raylib::Vector2 &pos)
     case State::SHOW_TOPLEVEL:
         toplevelZoomSel->onMousePosUpdate(pos);
         break;
+    case State::SHOW_SETTINGS:
+        settingsZoomSel->onMousePosUpdate(pos);
+        break;
     case State::FADE_TRANSITION:
         break;
     }
@@ -209,6 +241,9 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
         case State::SHOW_TOPLEVEL:
             toplevelZoomSel->onMousePressed();
             break;
+        case State::SHOW_SETTINGS:
+            settingsZoomSel->onMousePressed();
+            break;
         case State::FADE_TRANSITION:
             break;
         }
@@ -218,16 +253,39 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
 void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 {
     if (source == toplevelZoomSel) {
+        /* Handle click for top level menu zoom selector */
         switch(index) {
+
+        /* Play Local Game */
         case 0:
             break;
+
+        /* Play Online */
         case 1:
             break;
+
+        /* Settings */
         case 2:
+            currentState = State::SHOW_SETTINGS;
             break;
+
+        /* Exit */
         case 3:
             nextReturnCode = ReturnCode::EXIT_PROGRAM;
             break;
+
+        default:
+            break;
+        }
+    } else if (source == settingsZoomSel) {
+        /* Handle click for settings submenu zoom selector */
+        switch(index) {
+
+        /* Exit */
+        case 0:
+            currentState = State::SHOW_TOPLEVEL;
+            break;
+
         default:
             break;
         }
