@@ -128,6 +128,13 @@ class MainMenu : public Scene {
     /* Stores the current State being shown by the menu */
     State currentState;
 
+    /* 
+     * When in the transition fade state, we are fading to and from another state.
+     * These fields store these states so we can update their objects accordingly
+     */
+    State fadeFromState;
+    State fadeToState;
+
     /* Zoom selector for top level menu options */
     ZoomSelector *toplevelZoomSel;
 
@@ -137,6 +144,28 @@ class MainMenu : public Scene {
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);
 
+    /*
+     * Initiate the fade to another submenu state. This includes setting the from and to states,
+     * and entering the FADE_TRANSITION state
+     */
+    void initiateFadeToState(State nextState);
+
+    /*
+     * Set the opacity of all OpacityDependent subobjects from the provided menu state.
+     * This is used to fade all objects in a given submenu in unison
+     */
+    void setOpacityForState(State menuState, float opacity);
+
+    /*
+     * Update all the objects in a given state (specifically submenu states)
+     */
+    void updateForState(State menuState, double secs);
+
+    /* Update the mouse position for a given state (specifically submenu states) */
+    void updateMousePosForState(State menuState, const raylib::Vector2 &pos);
+
+    /* Renders all objects necessary for the given state (specifically submenu states) */
+    void renderForState(State menuState, Renderer *renderer);
 };
 
 #endif

@@ -21,8 +21,8 @@ static const float INIT_FADE_START_TIME = 0.5;
 static const float INIT_FADE_END_TIME = 1.5;
 
 /* Timing parameters for transition fade between submenus */
-static const float TRANS_FADE_OUT_END_TIME = 0.5;
-static const float TRANS_FADE_IN_END_TIME = 0.5;
+static const float TRANS_FADE_OUT_END_TIME = 0.15;
+static const float TRANS_FADE_IN_END_TIME = 0.3;
 
 /* Parameters common to all menu ZoomSelectors */
 static const float ZS_HOVER_RATIO = 1.75;
@@ -75,7 +75,7 @@ MainMenu::MainMenu()
     settingsZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
     settingsZoomSel->addItem(ZS_TEXT_EXIT, ZS_TEXT_CENTER_Y);
     settingsZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
-    settingsZoomSel->setDependentOpacity(1);
+    settingsZoomSel->setDependentOpacity(0);
 }
 
 MainMenu::~MainMenu()
@@ -114,37 +114,47 @@ void MainMenu::update(double secs)
     }
     bgSrcXPos = bgSrcXMax * bgSrcXPercent;
 
-    /**************************************************
-     * Perform updates specific to current menu state *
-     **************************************************/
     switch (currentState) {
-    case State::INITIAL_FADE:
 
+    case State::INITIAL_FADE:
         /* Update opacity of main title for fade in */
         fadeStopwatch += secs;
         if (fadeStopwatch >= INIT_FADE_END_TIME) {
             titleOpacity = 1;
-            toplevelZoomSel->setDependentOpacity(1);
+            setOpacityForState(State::SHOW_TOPLEVEL, 1);
             currentState = State::SHOW_TOPLEVEL;
         } else if (fadeStopwatch > INIT_FADE_START_TIME) {
             float opacity = (fadeStopwatch - INIT_FADE_START_TIME) /
                     (INIT_FADE_END_TIME - INIT_FADE_START_TIME);
             titleOpacity = opacity;
-            toplevelZoomSel->setDependentOpacity(opacity);
+            setOpacityForState(State::SHOW_TOPLEVEL, opacity);
         }
-
-    /* Deliberate fallthrough to update toplevel items too */
-    case State::SHOW_TOPLEVEL:
-
-        toplevelZoomSel->update(secs);
-
+        updateForState(State::SHOW_TOPLEVEL, secs);
         break;
-    case State::SHOW_SETTINGS:
-        
-        settingsZoomSel->update(secs);
-        
-        break;
+
     case State::FADE_TRANSITION:
+        /* Update opacities of fade-from and fade-to submenu states */        
+        float opacity;
+        fadeStopwatch += secs;
+        if (fadeStopwatch < TRANS_FADE_OUT_END_TIME) {
+            opacity = 1 - (fadeStopwatch / TRANS_FADE_OUT_END_TIME);
+            setOpacityForState(fadeFromState, opacity);
+            setOpacityForState(fadeToState, 0);
+        } else if (fadeStopwatch < TRANS_FADE_IN_END_TIME) {
+            opacity = (fadeStopwatch - TRANS_FADE_OUT_END_TIME) /
+                    (TRANS_FADE_IN_END_TIME - TRANS_FADE_OUT_END_TIME);
+            setOpacityForState(fadeFromState, 0);
+            setOpacityForState(fadeToState, opacity);
+        } else {
+            setOpacityForState(fadeToState, 1);
+            currentState = fadeToState;
+        }
+        updateForState(fadeFromState, secs);
+        updateForState(fadeToState, secs);
+        break;
+
+    default:
+        updateForState(currentState, secs);
         break;
     }
 }
@@ -157,19 +167,19 @@ void MainMenu::render(Renderer *renderer)
     renderer->drawTexture(titleTexture, titleXPos, titleYPos, titleWidth,
             titleHeight, titleOpacity);
 
-    /**************************************************
-     * Render objects dependent on current menu state *
-     **************************************************/
     switch (currentState) {
+    
     case State::INITIAL_FADE:
-    /* Deliberate fallthrough to update toplevel items too */
-    case State::SHOW_TOPLEVEL:
-        toplevelZoomSel->render(renderer);
+        renderForState(State::SHOW_TOPLEVEL, renderer);
         break;
-    case State::SHOW_SETTINGS:
-        settingsZoomSel->render(renderer);
-        break;
+    
     case State::FADE_TRANSITION:
+        renderForState(fadeFromState, renderer);
+        renderForState(fadeToState, renderer);
+        break;
+
+    default:
+        renderForState(currentState, renderer);
         break;
     }
 }
@@ -213,15 +223,18 @@ void MainMenu::calculateTitleSizeParams()
 void MainMenu::onMousePosUpdate(const raylib::Vector2 &pos)
 {
     switch (currentState) {
+    
     case State::INITIAL_FADE:
-    /* Update toplevel ZoomSelector size params */
-    case State::SHOW_TOPLEVEL:
-        toplevelZoomSel->onMousePosUpdate(pos);
+        updateMousePosForState(State::SHOW_TOPLEVEL, pos);
         break;
-    case State::SHOW_SETTINGS:
-        settingsZoomSel->onMousePosUpdate(pos);
-        break;
+
     case State::FADE_TRANSITION:
+        updateMousePosForState(fadeFromState, pos);
+        updateMousePosForState(fadeToState, pos);
+        break;
+
+    default:
+        updateMousePosForState(currentState, pos);
         break;
     }
 }
@@ -266,7 +279,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Settings */
         case 2:
-            currentState = State::SHOW_SETTINGS;
+            initiateFadeToState(State::SHOW_SETTINGS);
             break;
 
         /* Exit */
@@ -283,11 +296,87 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Exit */
         case 0:
-            currentState = State::SHOW_TOPLEVEL;
+            initiateFadeToState(State::SHOW_TOPLEVEL);
             break;
 
         default:
             break;
         }
+    }
+}
+
+void MainMenu::initiateFadeToState(State nextState)
+{
+    fadeStopwatch = 0;
+    fadeFromState = currentState;
+    fadeToState = nextState;
+    currentState = State::FADE_TRANSITION;
+}
+
+void MainMenu::setOpacityForState(State menuState, float opacity)
+{
+    switch (menuState) {
+    
+    case State::SHOW_TOPLEVEL:
+        toplevelZoomSel->setDependentOpacity(opacity);
+        break;
+    
+    case State::SHOW_SETTINGS:
+        settingsZoomSel->setDependentOpacity(opacity);
+        break;
+
+    default:
+        break;
+    }
+}
+
+void MainMenu::updateForState(State menuState, double secs)
+{
+    switch(menuState) {
+    
+    case State::SHOW_TOPLEVEL:
+        toplevelZoomSel->update(secs);
+        break;
+
+    case State::SHOW_SETTINGS:
+        settingsZoomSel->update(secs);
+        break;
+
+    default:
+        break;
+    }
+}
+
+void MainMenu::updateMousePosForState(State menuState, const raylib::Vector2 &pos)
+{
+    switch(menuState) {
+
+    case State::SHOW_TOPLEVEL:
+        toplevelZoomSel->onMousePosUpdate(pos);
+        break;
+
+    case State::SHOW_SETTINGS:
+        settingsZoomSel->onMousePosUpdate(pos);
+        break;
+
+    default:
+        break;
+    }
+}
+
+void MainMenu::renderForState(State menuState, Renderer *renderer)
+{
+    switch(menuState) {
+    
+    case State::SHOW_TOPLEVEL:
+        toplevelZoomSel->render(renderer);
+        break;
+
+    case State::SHOW_SETTINGS:
+        settingsZoomSel->render(renderer);
+        break;
+    
+    default:
+        break;
     }
 }
