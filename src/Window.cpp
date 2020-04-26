@@ -13,27 +13,27 @@ Window::Window()
         .windowHeight = 0
     };
 
-    constructWindow(&defaultWindowConfig);
+    constructWindow(defaultWindowConfig);
 }
 
-Window::Window(const struct WindowConfiguration *config)
+Window::Window(const struct WindowConfiguration &config)
 {
     constructWindow(config);
 }
 
-void Window::constructWindow(const struct WindowConfiguration *config)
+void Window::constructWindow(const struct WindowConfiguration &config)
 {
     unsigned int windowFlags = 0;
-    if (config->isFullscreen) windowFlags |= FLAG_FULLSCREEN_MODE;
-    if (config->vsyncEnabled) windowFlags |= FLAG_VSYNC_HINT;
+    if (config.isFullscreen) windowFlags |= FLAG_FULLSCREEN_MODE;
+    if (config.vsyncEnabled) windowFlags |= FLAG_VSYNC_HINT;
     SetConfigFlags(windowFlags);
 
     /* TODO: Add this line to disable 'escape' key to close window */
     //SetExitKey(-1);
 
-    SetTargetFPS(config->targetFPS);
-    raylibWindow = new raylib::Window(config->windowWidth,
-            config->windowHeight, WINDOW_TITLE);
+    SetTargetFPS(config.targetFPS);
+    raylibWindow = new raylib::Window(config.windowWidth,
+            config.windowHeight, WINDOW_TITLE);
 
     currentScene = nullptr;
     showingFPS = false;

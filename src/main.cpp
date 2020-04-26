@@ -4,6 +4,8 @@
 #include "MainMenu.h"
 #include "Util.h"
 
+using namespace std::placeholders;
+
 /*
  * This class represents the game program as a whole and manages
  * the top-level execution of scenes, the game loop, and
@@ -29,12 +31,19 @@ class GameRunner {
 
 	/* The main menu in use when main menu is shown */
 	MainMenu *mainMenu;
+
+	/* 
+	 * The callback that gets called when an object in the program requests a change
+	 * to the window configuration / graphics settings
+	 */
+	void onWindowRequest(WindowConfiguration &config);
 };
 
 GameRunner::GameRunner()
 {
 	window = new Window();
 	mainMenu = new MainMenu();
+	mainMenu->setWindowRequestCallback(std::bind(&GameRunner::onWindowRequest, this, _1));
 	window->flipToScene(mainMenu);
 }
 
@@ -61,6 +70,12 @@ void GameRunner::run()
 		/* Render the window */
 		window->renderFrame();
 	}
+}
+
+void GameRunner::onWindowRequest(WindowConfiguration &config)
+{
+	delete window;
+	window = new Window(config);
 }
 
 /* EXECUTUION ENTRY POINT - MAIN FUNCTION */

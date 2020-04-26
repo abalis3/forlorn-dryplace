@@ -244,6 +244,11 @@ MainMenu::ReturnCode MainMenu::getReturnCode()
     return nextReturnCode;
 }
 
+void MainMenu::setWindowRequestCallback(std::function<void(WindowConfiguration&)> callback)
+{
+    windowRequestCallback = callback;
+}
+
 void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
 {
     /* Handle left button press event per state of the menu */
@@ -275,6 +280,16 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Play Online */
         case 1:
+            {
+                struct WindowConfiguration windowConfig = {
+                    .isFullscreen = false,
+                    .vsyncEnabled = true,
+                    .targetFPS = -1,
+                    .windowWidth = 900,
+                    .windowHeight = 500,
+                };
+                windowRequestCallback(windowConfig);
+            }
             break;
 
         /* Settings */

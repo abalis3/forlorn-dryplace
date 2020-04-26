@@ -38,7 +38,7 @@ class Window {
     /*
      * Constructor to create window with specified configuration
      */
-    Window(const struct WindowConfiguration *config);
+    Window(const struct WindowConfiguration &config);
 
     /* Default destructor - destroy this window */
     ~Window();
@@ -78,7 +78,7 @@ class Window {
  private:
     
     /* Meat and potatoes of both possible constructors lives here */
-    void constructWindow(const struct WindowConfiguration *config);
+    void constructWindow(const struct WindowConfiguration &config);
 
     /* This function renders the FPS counter in the top left */
     void renderFPS();

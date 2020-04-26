@@ -1,6 +1,9 @@
 #ifndef FD__MAINMENU_H
 #define FD__MAINMENU_H
 
+#include <functional>
+
+#include "Window.h"
 #include "Scene.h"
 #include "ZoomSelector.h"
 
@@ -46,6 +49,13 @@ class MainMenu : public Scene {
     /* Called by the Game runner to see if the scene should keep running or transition */
     ReturnCode getReturnCode();
 
+    /*
+     * Can be called by the owner of this MainMenu object to render a callback. The
+     * callback will be called when the settings submenu applies changes requesting
+     * a new graphics settings configuration.
+     */
+    void setWindowRequestCallback(std::function<void(WindowConfiguration&)> callback);
+
  private:
 
     /* Texture for the background desert image */
@@ -56,6 +66,9 @@ class MainMenu : public Scene {
 
     /* Stores the next update that will be conveyed to the game runner */
     ReturnCode nextReturnCode;
+
+    /* The callback to call when a change in graphics/resolution is required */
+    std::function<void(WindowConfiguration&)> windowRequestCallback;
 
     /************************************************************
      * Fields for tracking for background texture pan animation *
