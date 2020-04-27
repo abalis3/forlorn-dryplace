@@ -54,7 +54,7 @@ class MainMenu : public Scene {
      * callback will be called when the settings submenu applies changes requesting
      * a new graphics settings configuration.
      */
-    void setWindowRequestCallback(std::function<void(WindowConfiguration&)> callback);
+    void setWindowRequestCallback(std::function<void(const WindowConfiguration&)> callback);
 
  private:
 
@@ -68,7 +68,7 @@ class MainMenu : public Scene {
     ReturnCode nextReturnCode;
 
     /* The callback to call when a change in graphics/resolution is required */
-    std::function<void(WindowConfiguration&)> windowRequestCallback;
+    std::function<void(const WindowConfiguration&)> windowRequestCallback;
 
     /************************************************************
      * Fields for tracking for background texture pan animation *

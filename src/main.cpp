@@ -36,7 +36,7 @@ class GameRunner {
 	 * The callback that gets called when an object in the program requests a change
 	 * to the window configuration / graphics settings
 	 */
-	void onWindowRequest(WindowConfiguration &config);
+	void onWindowRequest(const WindowConfiguration &config);
 };
 
 GameRunner::GameRunner()
@@ -72,10 +72,9 @@ void GameRunner::run()
 	}
 }
 
-void GameRunner::onWindowRequest(WindowConfiguration &config)
+void GameRunner::onWindowRequest(const WindowConfiguration &config)
 {
-	delete window;
-	window = new Window(config);
+	window->updateConfiguration(config);
 }
 
 /* EXECUTUION ENTRY POINT - MAIN FUNCTION */

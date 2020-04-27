@@ -33,8 +33,8 @@ static const float TOPLEVEL_ZS_TOP_POS = 0.435;
 static const float TOPLEVEL_ZS_BOT_POS = 0.93;
 
 /* Settings submenu zoom selector parameters */
-static const float SETTINGS_ZS_TOP_POS = 0.65;
-static const float SETTINGS_ZS_BOT_POS = 0.8;
+static const float SETTINGS_ZS_TOP_POS = 0.6;
+static const float SETTINGS_ZS_BOT_POS = 0.85;
 
 /* Definitions for positions of particular text entries on the ZoomSelector texture */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -73,6 +73,7 @@ MainMenu::MainMenu()
 
     /* Initialize settings submenu zoom selector */
     settingsZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    settingsZoomSel->addItem(ZS_TEXT_SETTINGS, ZS_TEXT_CENTER_Y);
     settingsZoomSel->addItem(ZS_TEXT_EXIT, ZS_TEXT_CENTER_Y);
     settingsZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     settingsZoomSel->setDependentOpacity(0);
@@ -244,7 +245,7 @@ MainMenu::ReturnCode MainMenu::getReturnCode()
     return nextReturnCode;
 }
 
-void MainMenu::setWindowRequestCallback(std::function<void(WindowConfiguration&)> callback)
+void MainMenu::setWindowRequestCallback(std::function<void(const WindowConfiguration&)> callback)
 {
     windowRequestCallback = callback;
 }
@@ -280,16 +281,6 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Play Online */
         case 1:
-            {
-                struct WindowConfiguration windowConfig = {
-                    .isFullscreen = false,
-                    .vsyncEnabled = true,
-                    .targetFPS = -1,
-                    .windowWidth = 900,
-                    .windowHeight = 500,
-                };
-                windowRequestCallback(windowConfig);
-            }
             break;
 
         /* Settings */
@@ -309,8 +300,19 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         /* Handle click for settings submenu zoom selector */
         switch(index) {
 
-        /* Exit */
+        /* Settings */
         case 0:
+            {
+                static int configNumber = 0;
+                windowRequestCallback(Window::getWindowedConfigModes()[configNumber++]);
+                if (configNumber == Window::getNumWindowedConfigModes()) {
+                    configNumber = 0;
+                }
+            }
+            break;
+
+        /* Exit */
+        case 1:
             initiateFadeToState(State::SHOW_TOPLEVEL);
             break;
 

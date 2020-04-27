@@ -14,12 +14,6 @@ struct WindowConfiguration
     /* Is the window fullscreen (true) or windowed (false) */
     bool isFullscreen;
 
-    /* Is vsync enabled for the window */
-    bool vsyncEnabled;
-
-    /* What is the FPS cap (-1 for uncapped) */
-    int targetFPS;
-
     /* The width of the window, in pixels (0 for monitor resolution) */
     int windowWidth;
 
@@ -75,6 +69,19 @@ class Window {
      */
     void renderFrame();
 
+    /*
+     * Returns the number of windowed config modes available in getWindowedConfigModes
+     * This function only returns the first x entries such that it can filter out later
+     * larger entries that are too big for the monitor size.
+     */
+    static int getNumWindowedConfigModes();
+
+    /* Returns the static array of config modes available for windowed operation */
+    static const WindowConfiguration* getWindowedConfigModes();
+
+    /* Update the configuration of the window to match the new configuration */
+    void updateConfiguration(const WindowConfiguration &config);
+
  private:
     
     /* Meat and potatoes of both possible constructors lives here */
@@ -82,6 +89,9 @@ class Window {
 
     /* This function renders the FPS counter in the top left */
     void renderFPS();
+
+    /* This function recalculates necessary fields and notifies dependents when size is changed */
+    void recalculateSizeParams();
 
     /* The underlying raylib window instance */
     raylib::Window *raylibWindow;

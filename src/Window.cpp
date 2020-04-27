@@ -3,12 +3,55 @@
 #define WINDOW_TITLE "Forbidden Desert"
 #define FPS_FONT_SIZE_DENOMINATOR 15   // (1 / x) of window height
 
+/* Configurations for available windowed resolutions */
+static const int NUM_WINDOWED_CONFIG_MODES = 12;
+static const WindowConfiguration WINDOWED_CONFIG_MODES[NUM_WINDOWED_CONFIG_MODES] = {
+
+    /*
+     * IMPORTANT:
+     * Keep above field NUM_WINDOWED_CONFIG_MODES equal to number of entries 
+     * AND these entries MUST be kept in order of smallest to largest
+     */
+    {false, 1142, 658},
+    {false, 1280, 720},
+    {false, 1408, 792},
+    {false, 1536, 864},
+    {false, 1664, 936},
+    {false, 1920, 1080},
+    {false, 2176, 1274},
+    {false, 2432, 1368},
+    {false, 2560, 1440},
+    {false, 3072, 1728},
+    {false, 3584, 2016},
+    {false, 3840, 2160}
+
+};
+
+int Window::getNumWindowedConfigModes()
+{
+    int monitorWidth = GetMonitorWidth(0);
+    int monitorHeight = GetMonitorHeight(0);
+    int curModeIdx;
+
+    for (curModeIdx = 0; curModeIdx < NUM_WINDOWED_CONFIG_MODES; curModeIdx++){
+        WindowConfiguration config = WINDOWED_CONFIG_MODES[curModeIdx];
+        if (config.windowWidth > monitorWidth || config.windowHeight > monitorHeight) {
+            return curModeIdx;
+        }
+    }
+
+    return NUM_WINDOWED_CONFIG_MODES;
+}
+
+const WindowConfiguration* Window::getWindowedConfigModes()
+{
+    return WINDOWED_CONFIG_MODES;
+}
+
 Window::Window()
 {
     const struct WindowConfiguration defaultWindowConfig = {
         .isFullscreen = true,
-        .vsyncEnabled = true,
-        .targetFPS = -1,
         .windowWidth = 0,
         .windowHeight = 0
     };
@@ -23,21 +66,20 @@ Window::Window(const struct WindowConfiguration &config)
 
 void Window::constructWindow(const struct WindowConfiguration &config)
 {
-    unsigned int windowFlags = 0;
+    unsigned int windowFlags = FLAG_VSYNC_HINT;
     if (config.isFullscreen) windowFlags |= FLAG_FULLSCREEN_MODE;
-    if (config.vsyncEnabled) windowFlags |= FLAG_VSYNC_HINT;
     SetConfigFlags(windowFlags);
 
     /* TODO: Add this line to disable 'escape' key to close window */
     //SetExitKey(-1);
 
-    SetTargetFPS(config.targetFPS);
+    SetTargetFPS(-1);
     raylibWindow = new raylib::Window(config.windowWidth,
             config.windowHeight, WINDOW_TITLE);
 
     currentScene = nullptr;
     showingFPS = false;
-    fpsFontSize = getHeight() / FPS_FONT_SIZE_DENOMINATOR;
+    recalculateSizeParams();
 }
 
 Window::~Window()
@@ -73,11 +115,10 @@ void Window::flipToScene(Scene *newScene)
 
 void Window::update(double secs)
 {
+    if (raylibWindow->IsResized()) {
+        recalculateSizeParams();
+    }
     if (currentScene != nullptr) {
-        if (raylibWindow->IsResized()) {
-            currentScene->updateWindowSize(getWidth(), getHeight());
-            fpsFontSize = getHeight() / FPS_FONT_SIZE_DENOMINATOR;
-        }
         const Vector2 mousePos = mouse.GetPosition();
         currentScene->onMousePosUpdate(mousePos);
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -97,6 +138,14 @@ void Window::update(double secs)
     if (IsKeyPressed(KEY_ZERO)) {
         showingFPS = !showingFPS;
     }
+}
+
+void Window::recalculateSizeParams()
+{
+    if (currentScene != nullptr) {
+        currentScene->updateWindowSize(getWidth(), getHeight());
+    }
+    fpsFontSize = getHeight() / FPS_FONT_SIZE_DENOMINATOR;
 }
 
 void Window::renderFrame()
@@ -120,4 +169,15 @@ void Window::renderFPS()
             2*boxPadding, fpsFontSize);
     renderer.setColor(GREEN);
 	renderer.drawText(std::to_string(getFPS()), textInset, textInset, fpsFontSize);
+}
+
+void Window::updateConfiguration(const WindowConfiguration &config)
+{
+    if (config.isFullscreen != raylibWindow->IsFullscreen()){
+        raylibWindow->ToggleFullscreen();
+    }
+    raylibWindow->SetSize(config.windowWidth, config.windowHeight);
+    raylibWindow->SetPosition((GetMonitorWidth(0) - config.windowWidth) / 2,
+            (GetMonitorHeight(0) - config.windowHeight) / 2);
+    recalculateSizeParams();
 }
