@@ -2,7 +2,7 @@
 
 #include "Util.h"
 
-#define CARAT_IMG_PATH "ZoomScroll/carat.png"
+#define CARAT_IMG_PATH "ZoomSelector/carat.png"
 
 #define ANIMATION_DURATION 0.1
 #define CARAT_HEIGHT_FRACTION 0.15

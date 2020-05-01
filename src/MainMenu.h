@@ -151,8 +151,11 @@ class MainMenu : public Scene {
     /* Zoom selector for top level menu options */
     ZoomSelector *toplevelZoomSel;
 
-    /* Zoom selector for settings submenu options */
-    ZoomSelector *settingsZoomSel;
+    /* Zoom selector for settings submenu "Apply" button */
+    ZoomSelector *settingsApplyZoomSel;
+
+    /* Zoom selector for settings submenu "Back" button */
+    ZoomSelector *settingsBackZoomSel;
 
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);
