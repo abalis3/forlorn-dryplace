@@ -6,6 +6,7 @@
 static const char BACKGROUND_IMG_PATH[] = "MainMenu/desert-background.png";
 static const char TITLE_IMG_PATH[] = "MainMenu/main-title.png";
 static const char ZOOMSELECTOR_IMG_PATH[] = "MainMenu/zoomselector.png";
+static const char TEXT_LABEL_PATHS[] = "MainMenu/text-labels.png";
 
 /* Background pan animation parameters */
 static const float BG_MAX_SPEED = 0.02;
@@ -32,12 +33,16 @@ static const float ZS_ITEM_PAD_PCT = 0.05;
 static const float TOPLEVEL_ZS_TOP_POS = 0.435;
 static const float TOPLEVEL_ZS_BOT_POS = 0.93;
 
-/* Settings submenu zoom selector parameters */
+/* Settings submenu parameters */
 static const float SETTINGS_ZS_TOP_POS = 0.73;
 static const float SETTINGS_ZS_BOT_POS = 0.9;
 static const float SETTINGS_ZS_DIST_FROM_CTR_PCT_OF_HEIGHT = 1.2;
+static const float SETTINGS_TL_HEIGHT_PCT = 0.04;
+static const float SETTINGS_TL_WINDOW_MODE_TOP_POS = 0.48;
+static const float SETTINGS_TL_RESOLUTION_TOP_POS = 0.62;
+static const float SETTINGS_TL_DIST_FROM_CTR_PCT_OF_HEIGHT = 2.0;
 
-/* Definitions for positions of particular text entries on the ZoomSelector texture */
+/* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
 static const raylib::Rectangle ZS_TEXT_PLAY_LOCAL_GAME(0, 0, 894, 137);
 static const raylib::Rectangle ZS_TEXT_PLAY_ONLINE(0, 137, 616, 137);
@@ -45,6 +50,10 @@ static const raylib::Rectangle ZS_TEXT_SETTINGS(0, 274, 445, 137);
 static const raylib::Rectangle ZS_TEXT_EXIT(0, 411, 189, 137);
 static const raylib::Rectangle ZS_TEXT_APPLY(0, 548, 295, 137);
 static const raylib::Rectangle ZS_TEXT_BACK(0, 685, 232, 137);
+
+/* Definitions for positions of particular entries in the text label texture */
+static const raylib::Rectangle TL_WINDOW_MODE(0, 0, 772, 137);
+static const raylib::Rectangle TL_RESOLUTION(0, 137, 608, 137);
 
 /* For std::bind _1, _2 ... */
 using namespace std::placeholders;
@@ -59,11 +68,14 @@ MainMenu::MainMenu()
     currentState = State::INITIAL_FADE;
     nextReturnCode = ReturnCode::KEEP_RUNNING;
 
-    /* Load textures for background and main title text */
+    /* Load textures for background and main title text and text labels */
     bgTexture = new raylib::Texture(Util::formResourcePath(BACKGROUND_IMG_PATH));
     bgTexture->GenMipmaps();
     titleTexture = new raylib::Texture(Util::formResourcePath(TITLE_IMG_PATH));
     titleTexture->GenMipmaps();
+    textLabelTexture = new raylib::Texture(Util::formResourcePath(TEXT_LABEL_PATHS));
+    textLabelTexture->GenMipmaps();
+    settingsTLOpacity = 0;
 
     /* Initialize top level menu zoom selector */
     toplevelZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
@@ -82,16 +94,18 @@ MainMenu::MainMenu()
     settingsBackZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
     settingsBackZoomSel->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
     settingsBackZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
-    settingsBackZoomSel->setDependentOpacity(0);}
+    settingsBackZoomSel->setDependentOpacity(0);
+}
 
 MainMenu::~MainMenu()
 {
     delete bgTexture;
     delete titleTexture;
+    delete textLabelTexture;
     delete toplevelZoomSel;
     delete settingsApplyZoomSel;
     delete settingsBackZoomSel;
-}   
+}
 
 void MainMenu::update(double secs)
 {
@@ -197,6 +211,7 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     calculateTitleSizeParams();
 
     float zoomSelHeight, zoomSelYPos, zoomSelItemPadding;
+    float textLabelHeight, textLabelMaxX;
 
     /* Update toplevel ZoomSelector size params */
     zoomSelHeight = (TOPLEVEL_ZS_BOT_POS - TOPLEVEL_ZS_TOP_POS) * getHeight();
@@ -213,6 +228,19 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
             zoomSelYPos, zoomSelItemPadding);
     settingsBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
             zoomSelYPos, zoomSelItemPadding);
+
+    /* Update settings menu text labels size params */
+    textLabelHeight = getHeight() * SETTINGS_TL_HEIGHT_PCT;
+    textLabelMaxX = (getWidth() / 2) - (textLabelHeight * SETTINGS_TL_DIST_FROM_CTR_PCT_OF_HEIGHT);
+    settingsTLWindowModeDst.height = textLabelHeight;
+    settingsTLWindowModeDst.y = getHeight() * SETTINGS_TL_WINDOW_MODE_TOP_POS;
+    settingsTLWindowModeDst.width = (textLabelHeight / TL_WINDOW_MODE.height) *
+            TL_WINDOW_MODE.width;
+    settingsTLWindowModeDst.x = textLabelMaxX - settingsTLWindowModeDst.width;
+    settingsTLResolutionDst.height = textLabelHeight;
+    settingsTLResolutionDst.y = getHeight() * SETTINGS_TL_RESOLUTION_TOP_POS;
+    settingsTLResolutionDst.width = (textLabelHeight / TL_RESOLUTION.height) * TL_RESOLUTION.width;
+    settingsTLResolutionDst.x = textLabelMaxX - settingsTLResolutionDst.width;
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -339,6 +367,7 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
     case State::SHOW_SETTINGS:
         settingsBackZoomSel->setDependentOpacity(opacity);
         settingsApplyZoomSel->setDependentOpacity(opacity);
+        settingsTLOpacity = opacity;
         break;
 
     default:
@@ -391,6 +420,10 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
         break;
 
     case State::SHOW_SETTINGS:
+        renderer->drawTexture(textLabelTexture, TL_WINDOW_MODE, settingsTLWindowModeDst,
+                settingsTLOpacity);
+        renderer->drawTexture(textLabelTexture, TL_RESOLUTION, settingsTLResolutionDst,
+                settingsTLOpacity);
         settingsApplyZoomSel->render(renderer);
         settingsBackZoomSel->render(renderer);
         break;

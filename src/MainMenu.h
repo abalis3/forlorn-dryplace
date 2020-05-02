@@ -64,6 +64,9 @@ class MainMenu : public Scene {
     /* Texture for the main title "Forbidden Desert" image */
     raylib::Texture *titleTexture;
 
+    /* Texture for text labels on various screens in the menu */
+    raylib::Texture *textLabelTexture;
+
     /* Stores the next update that will be conveyed to the game runner */
     ReturnCode nextReturnCode;
 
@@ -156,6 +159,13 @@ class MainMenu : public Scene {
 
     /* Zoom selector for settings submenu "Back" button */
     ZoomSelector *settingsBackZoomSel;
+
+    /* Rectangles to define where on screen the settings screen text labels should render to */
+    raylib::Rectangle settingsTLWindowModeDst;
+    raylib::Rectangle settingsTLResolutionDst;
+
+    /* Opacity variable for current opacity of text labels on settings submenu */
+    float settingsTLOpacity;
 
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);
