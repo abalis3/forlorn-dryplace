@@ -2,11 +2,11 @@
 
 #include "Util.h"
 
-#define CARAT_IMG_PATH "ZoomSelector/carat.png"
+static const char CARAT_IMG_PATH[] = "ZoomSelector/carat.png";
 
-#define ANIMATION_DURATION 0.1
-#define CARAT_HEIGHT_FRACTION 0.15
-#define CARAT_DISTANCE_FRACTION 0.8
+static const float ANIMATION_DURATION = 0.1;
+static const float CARAT_HEIGHT_FRACTION = 0.15;
+static const float CARAT_DISTANCE_FRACTION = 0.8;
 
 ZoomSelector::ZoomSelector(const std::string &texturePath, float hoverZoomRatio)
 {

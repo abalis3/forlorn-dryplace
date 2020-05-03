@@ -6,6 +6,7 @@
 #include "Window.h"
 #include "Scene.h"
 #include "ZoomSelector.h"
+#include "BoxSelector.h"
 
 class MainMenu : public Scene {
  public:
@@ -166,6 +167,9 @@ class MainMenu : public Scene {
 
     /* Opacity variable for current opacity of text labels on settings submenu */
     float settingsTLOpacity;
+
+    /* BoxSelector for resolution option on settings menu */
+    BoxSelector *resolutionBoxSel;
 
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);

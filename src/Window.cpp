@@ -1,7 +1,7 @@
 #include "Window.h"
 
-#define WINDOW_TITLE "Forbidden Desert"
-#define FPS_FONT_SIZE_DENOMINATOR 15   // (1 / x) of window height
+static const char WINDOW_TITLE[] = "Forbidden Desert";
+static const int FPS_FONT_SIZE_DENOMINATOR = 15; // (1 / x) of window height
 
 /* Configurations for available windowed resolutions */
 static const int NUM_WINDOWED_CONFIG_MODES = 12;

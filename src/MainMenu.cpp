@@ -95,6 +95,12 @@ MainMenu::MainMenu()
     settingsBackZoomSel->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
     settingsBackZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     settingsBackZoomSel->setDependentOpacity(0);
+
+    /* Initialize settings submenu box selector */
+    resolutionBoxSel = new BoxSelector();
+    resolutionBoxSel->setHeight(100);
+    resolutionBoxSel->setXPos(100);
+    resolutionBoxSel->setYPos(100);
 }
 
 MainMenu::~MainMenu()
@@ -105,6 +111,7 @@ MainMenu::~MainMenu()
     delete toplevelZoomSel;
     delete settingsApplyZoomSel;
     delete settingsBackZoomSel;
+    delete resolutionBoxSel;
 }
 
 void MainMenu::update(double secs)
@@ -424,6 +431,7 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
                 settingsTLOpacity);
         renderer->drawTexture(textLabelTexture, TL_RESOLUTION, settingsTLResolutionDst,
                 settingsTLOpacity);
+        resolutionBoxSel->render(renderer);
         settingsApplyZoomSel->render(renderer);
         settingsBackZoomSel->render(renderer);
         break;
