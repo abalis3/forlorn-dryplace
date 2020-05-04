@@ -33,6 +33,16 @@ class BoxSelector : public OpacityDependent {
     void setXPos(float xPos);
     void setYPos(float yPos);
 
+    /*
+     * Handle mouse position update from window - this function looks for
+     * a collision with each arrow button to determine if a hover
+     * zoom should take place
+     */ 
+    void onMousePosUpdate(const raylib::Vector2 &pos);
+
+    /* Called once per game loop to update the animations of the box selector */
+    void update(double secs); 
+
     /* Called once per game loop to make the BoxSelector render itself */
     void render(Renderer *renderer);
 
@@ -40,6 +50,9 @@ class BoxSelector : public OpacityDependent {
 
     /* The texture for the background rectangle */
     raylib::Texture *bgRectTexture;
+
+    /* The texture for the arrow buttons on either side of the selector */
+    raylib::Texture *arrowTexture;
 
     /*
      * This rectangle defines the bounding/collision box for the whole BoxSelector,
@@ -50,9 +63,13 @@ class BoxSelector : public OpacityDependent {
     /* Rectangle defining desired draw destination of background rectangle */
     raylib::Rectangle bgRectDst;
 
-    /* Defines the max x/y size in pixels of arrow when at max zoom and when at min zoom */
+    /* Defines the x/y size in pixels of arrow at different zoom levels */
     float arrowMaxDimension;
     float arrowMinDimension;
+    float leftArrowCurDimension;
+    float rightArrowCurDimension;
+    float leftArrowTargetDimension;
+    float rightArrowTargetDimension;
 
     /*
      * Defines the size in px of the space between the center of the arrow button and

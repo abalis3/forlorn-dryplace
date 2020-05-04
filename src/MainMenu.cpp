@@ -19,7 +19,7 @@ static const float TITLE_HEIGHT_PCT = 0.275;
 
 /* Timing parameters for initial fade-in animation */
 static const float INIT_FADE_START_TIME = 0.5;
-static const float INIT_FADE_END_TIME = 1.5;
+static const float INIT_FADE_END_TIME = 1.2;
 
 /* Timing parameters for transition fade between submenus */
 static const float TRANS_FADE_OUT_END_TIME = 0.2;
@@ -98,9 +98,10 @@ MainMenu::MainMenu()
 
     /* Initialize settings submenu box selector */
     resolutionBoxSel = new BoxSelector();
-    resolutionBoxSel->setHeight(100);
-    resolutionBoxSel->setXPos(100);
-    resolutionBoxSel->setYPos(100);
+    resolutionBoxSel->setHeight(80);
+    resolutionBoxSel->setXPos(1000);
+    resolutionBoxSel->setYPos(700);
+    resolutionBoxSel->setDependentOpacity(0);
 }
 
 MainMenu::~MainMenu()
@@ -375,6 +376,7 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
         settingsBackZoomSel->setDependentOpacity(opacity);
         settingsApplyZoomSel->setDependentOpacity(opacity);
         settingsTLOpacity = opacity;
+        resolutionBoxSel->setDependentOpacity(opacity);
         break;
 
     default:
@@ -393,6 +395,7 @@ void MainMenu::updateForState(State menuState, double secs)
     case State::SHOW_SETTINGS:
         settingsApplyZoomSel->update(secs);
         settingsBackZoomSel->update(secs);
+        resolutionBoxSel->update(secs);
         break;
 
     default:
@@ -411,6 +414,7 @@ void MainMenu::updateMousePosForState(State menuState, const raylib::Vector2 &po
     case State::SHOW_SETTINGS:
         settingsApplyZoomSel->onMousePosUpdate(pos);
         settingsBackZoomSel->onMousePosUpdate(pos);
+        resolutionBoxSel->onMousePosUpdate(pos);
         break;
 
     default:

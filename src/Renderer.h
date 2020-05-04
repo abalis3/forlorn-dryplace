@@ -64,6 +64,9 @@ class Renderer {
     void drawTexture(raylib::Texture *tex, const raylib::Rectangle &src,
             const raylib::Rectangle &dst, float opacity);
 
+    /* Draw the entire texture to given dst rectangle with given opacity */
+    void drawTexture(raylib::Texture *tex, const raylib::Rectangle &dst, float opacity);
+
  private:
 
     /* The current color that will be used in drawing operations */
