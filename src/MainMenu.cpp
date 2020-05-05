@@ -101,6 +101,7 @@ MainMenu::MainMenu()
     resolutionBoxSel->setHeight(80);
     resolutionBoxSel->setXPos(1000);
     resolutionBoxSel->setYPos(700);
+    resolutionBoxSel->addItem("1920 x 1080", false);
     resolutionBoxSel->setDependentOpacity(0);
 }
 

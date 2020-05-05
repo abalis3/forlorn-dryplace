@@ -33,6 +33,9 @@ class BoxSelector : public OpacityDependent {
     void setXPos(float xPos);
     void setYPos(float yPos);
 
+    /* Adds an item (in-order) to the BoxSelector with given text content. */
+    void addItem(const std::string &content, bool selected);
+
     /*
      * Handle mouse position update from window - this function looks for
      * a collision with each arrow button to determine if a hover
@@ -53,6 +56,9 @@ class BoxSelector : public OpacityDependent {
 
     /* The texture for the arrow buttons on either side of the selector */
     raylib::Texture *arrowTexture;
+
+    /* The font used to draw the content of each option in the box */
+    raylib::Font *font;
 
     /*
      * This rectangle defines the bounding/collision box for the whole BoxSelector,
@@ -76,6 +82,37 @@ class BoxSelector : public OpacityDependent {
      * the edge of the background rectangle texture
      */
     float arrowToBoxPadding;
+
+    /* Font size params given the last update to the height of the BoxSelector */
+    float fontSize;
+    float fontSpacing;
+
+    /* Struct representing a single entry in the BoxSelector */
+    struct _item {
+        /* The text content for this item */
+        std::string text;
+
+        /* The size of the rendered text on screen for this item*/
+        raylib::Vector2 renderSize;
+
+        /* The index in the list of items (to be returned by getSelectedIndex) */
+        int index;
+
+        /* Linked list pointer (points towards last item in BoxSelector) */
+        struct _item *next;
+    };
+
+    /* Typedef to give the struct a nice name */
+    typedef struct _item BoxSelectorItem;
+
+    /* Singly queue of items in this BoxSelector (first item at head) */
+    BoxSelectorItem *itemListHead, *itemListTail;
+
+    /* Pointer to the currently selected item in the list */
+    BoxSelectorItem *selectedItem;
+
+    /* The next item added will get this index */
+    int nextItemIndex;
 };
 
 #endif

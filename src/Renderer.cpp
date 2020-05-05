@@ -42,9 +42,16 @@ void Renderer::drawText(const char *text, int x, int y, int fontSize)
     currentColor->DrawText(text, x, y, fontSize);
 }
 
-void Renderer::drawText(std::string text, int x, int y, int fontSize)
+void Renderer::drawText(const std::string &text, int x, int y, int fontSize)
 {
     drawText(text.c_str(), x, y, fontSize);
+}
+
+void Renderer::drawText(raylib::Font &font, const std::string &text, int x, int y, int fontSize,
+        int fontSpacing, float opacity)
+{
+    Color renderColor = Fade(*currentColor, opacity);
+    font.DrawText(text, raylib::Vector2(x, y), fontSize, fontSpacing, renderColor);
 }
 
 int Renderer::measureText(const char *text, int fontSize)

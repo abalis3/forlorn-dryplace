@@ -35,7 +35,11 @@ class Renderer {
     void drawText(const char *text, int x, int y, int fontSize);
 
     /* Draws the given std::string at position x,y with given font size */
-    void drawText(std::string text, int x, int y, int fontSize);
+    void drawText(const std::string &text, int x, int y, int fontSize);
+
+    /* Draws the given std::string at position x,y with given font, size, and opacity */
+    void drawText(raylib::Font &font, const std::string &text, int x, int y, int fontSize,
+            int fontSpacing, float opacity);
 
     /* Gets the width in pixels of the rendered text with given font size */
     int measureText(const char *text, int fontSize);

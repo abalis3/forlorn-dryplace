@@ -4,6 +4,9 @@
 
 static const char BG_RECT_IMG_PATH[] = "BoxSelector/background-rect.png";
 static const char ARROW_IMG_PATH[] = "BoxSelector/arrow.png";
+static const char MARVEL_FONT_PATH[] = "Fonts/Marvel-Regular.ttf";
+
+static const int BASE_FONT_SIZE = 175;
 
 /*
  * Parameters defining dimensions of certain items in BoxSelectors.
@@ -14,19 +17,39 @@ static const float PAD_BETWEEN_ARROWS_AND_BOX = 1.0; // center of arrow to edge 
 static const float ARROW_BUTTON_MAX_DIMENSION = 0.65; // width and height are the same
 static const float ARROW_BUTTON_MIN_DIMENSION = 0.5; // width and height are the same
 static const float ARROW_ZOOM_ANIM_SPEED = 3.0; // higher = faster
+static const float FONT_HEIGHT_PCT = 0.8;
+static const float FONT_SPACING_PCT = 0.05;
 
 BoxSelector::BoxSelector()
 {
+    /* Load necessary resources */
     bgRectTexture = new raylib::Texture(Util::formResourcePath(BG_RECT_IMG_PATH));
     bgRectTexture->GenMipmaps();
     arrowTexture = new raylib::Texture(Util::formResourcePath(ARROW_IMG_PATH));
     arrowTexture->GenMipmaps();
+    font = new raylib::Font(Util::formResourcePath(MARVEL_FONT_PATH), BASE_FONT_SIZE, nullptr, 95);
+    GenTextureMipmaps(&font->texture);
+
+    /* Initialize variables as needed */
+    itemListHead = itemListTail = nullptr;
+    selectedItem = nullptr;
+    nextItemIndex = 0;
+    fontSize = BASE_FONT_SIZE;
+    fontSpacing = 0;
 }
 
 BoxSelector::~BoxSelector()
 {
     delete bgRectTexture;
     delete arrowTexture;
+    delete font;
+
+    /* Clear out list of items */
+    while(itemListHead != nullptr) {
+        itemListTail = itemListHead;
+        itemListHead = itemListHead->next;
+        delete itemListTail;
+    }
 }
 
 void BoxSelector::setHeight(float height)
@@ -34,11 +57,21 @@ void BoxSelector::setHeight(float height)
     bgRectDst.height = height;
     bgRectDst.width = (height / bgRectTexture->GetHeight()) * bgRectTexture->GetWidth();
 
+    /* Update properties used for arrows */
     arrowMaxDimension = ARROW_BUTTON_MAX_DIMENSION * height;
     arrowMinDimension = ARROW_BUTTON_MIN_DIMENSION * height;
     arrowToBoxPadding = PAD_BETWEEN_ARROWS_AND_BOX * height;
     leftArrowCurDimension = leftArrowTargetDimension = arrowMinDimension;
     rightArrowCurDimension = rightArrowTargetDimension = arrowMinDimension;
+
+    /* Update font size and text dimensions for all items in list */
+    fontSize = FONT_HEIGHT_PCT * height;
+    fontSpacing = FONT_SPACING_PCT * height;
+    BoxSelectorItem *curItem = itemListHead;
+    while (curItem != nullptr) {
+        curItem->renderSize = font->MeasureText(curItem->text, fontSize, fontSpacing);
+        curItem = curItem->next;
+    }
 
     boundingBox.height = height;
     boundingBox.width = arrowMaxDimension + 2*arrowToBoxPadding + bgRectDst.width;
@@ -59,6 +92,25 @@ void BoxSelector::setYPos(float yPos)
 {
     boundingBox.y = yPos;
     bgRectDst.y = yPos;
+}
+
+void BoxSelector::addItem(const std::string &content, bool selected)
+{
+    BoxSelectorItem *newItem = new BoxSelectorItem();
+    
+    newItem->text = content;
+    newItem->index = nextItemIndex++;
+    newItem->renderSize = font->MeasureText(content, fontSize, fontSpacing);
+
+    newItem->next = nullptr;
+    if (itemListTail == nullptr) {
+        itemListHead = newItem;
+        selectedItem = newItem;
+    } else {
+        itemListTail->next = newItem;
+        if (selected) selectedItem = newItem;
+    }
+    itemListTail = newItem;
 }
 
 void BoxSelector::onMousePosUpdate(const raylib::Vector2 &pos)
@@ -117,6 +169,15 @@ void BoxSelector::render(Renderer *renderer)
     /* Draw the background rectangle */
     renderer->drawTexture(bgRectTexture, bgRectDst, getDependentOpacity());
     
+    /* Draw the text for the selected item in the rectangle */
+    if (selectedItem != nullptr) {
+        int posX = bgRectDst.x + (bgRectDst.width - selectedItem->renderSize.x) / 2;
+        int posY = bgRectDst.y + (bgRectDst.height - selectedItem->renderSize.y) / 2;
+        renderer->setColor(WHITE);
+        renderer->drawText(*font, selectedItem->text, posX, posY, fontSize, fontSpacing,
+                getDependentOpacity());
+    }
+
     /* Draw the arrow buttons */
     renderer->drawTexture(arrowTexture,
         boundingBox.x + (arrowMaxDimension - leftArrowCurDimension) / 2,
