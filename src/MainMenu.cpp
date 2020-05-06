@@ -36,11 +36,13 @@ static const float TOPLEVEL_ZS_BOT_POS = 0.93;
 /* Settings submenu parameters */
 static const float SETTINGS_ZS_TOP_POS = 0.73;
 static const float SETTINGS_ZS_BOT_POS = 0.9;
-static const float SETTINGS_ZS_DIST_FROM_CTR_PCT_OF_HEIGHT = 1.2;
+static const float SETTINGS_ZS_DIST_FROM_CTR_HEIGHT_PCT = 1.2;      // relative to height of ZS
 static const float SETTINGS_TL_HEIGHT_PCT = 0.04;
 static const float SETTINGS_TL_WINDOW_MODE_TOP_POS = 0.48;
 static const float SETTINGS_TL_RESOLUTION_TOP_POS = 0.62;
-static const float SETTINGS_TL_DIST_FROM_CTR_PCT_OF_HEIGHT = 2.0;
+static const float SETTINGS_TL_DIST_FROM_CTR_HEIGHT_PCT = 0.05;   // relative to scene height
+static const float SETTINGS_BS_RESOLUTION_TOP_POS = 0.605;
+static const float SETTINGS_BS_HEIGHT_PCT = 0.06;                   // relative to scene height
 
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -98,10 +100,12 @@ MainMenu::MainMenu()
 
     /* Initialize settings submenu box selector */
     resolutionBoxSel = new BoxSelector();
-    resolutionBoxSel->setHeight(80);
-    resolutionBoxSel->setXPos(1000);
-    resolutionBoxSel->setYPos(700);
-    resolutionBoxSel->addItem("1920 x 1080", false);
+    /* Enter resolutions, starting with highest. Highest mode will be selected as first entry */
+    for (int i = Window::getNumWindowedConfigModes() - 1; i >= 0; i--) {
+        const WindowConfiguration cfg = Window::getWindowedConfigModes()[i];
+        resolutionBoxSel->addItem(std::to_string(cfg.windowWidth) + " x " +
+                std::to_string(cfg.windowHeight), false);
+    }
     resolutionBoxSel->setDependentOpacity(0);
 }
 
@@ -221,6 +225,7 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
 
     float zoomSelHeight, zoomSelYPos, zoomSelItemPadding;
     float textLabelHeight, textLabelMaxX;
+    float distFromCenter;
 
     /* Update toplevel ZoomSelector size params */
     zoomSelHeight = (TOPLEVEL_ZS_BOT_POS - TOPLEVEL_ZS_TOP_POS) * getHeight();
@@ -232,7 +237,7 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     zoomSelHeight = (SETTINGS_ZS_BOT_POS - SETTINGS_ZS_TOP_POS) * getHeight();
     zoomSelYPos = ((SETTINGS_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
     zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
-    float distFromCenter = zoomSelHeight * SETTINGS_ZS_DIST_FROM_CTR_PCT_OF_HEIGHT;
+    distFromCenter = zoomSelHeight * SETTINGS_ZS_DIST_FROM_CTR_HEIGHT_PCT;
     settingsApplyZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) - distFromCenter,
             zoomSelYPos, zoomSelItemPadding);
     settingsBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
@@ -240,7 +245,7 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
 
     /* Update settings menu text labels size params */
     textLabelHeight = getHeight() * SETTINGS_TL_HEIGHT_PCT;
-    textLabelMaxX = (getWidth() / 2) - (textLabelHeight * SETTINGS_TL_DIST_FROM_CTR_PCT_OF_HEIGHT);
+    textLabelMaxX = (getWidth() / 2) - (getHeight() * SETTINGS_TL_DIST_FROM_CTR_HEIGHT_PCT);
     settingsTLWindowModeDst.height = textLabelHeight;
     settingsTLWindowModeDst.y = getHeight() * SETTINGS_TL_WINDOW_MODE_TOP_POS;
     settingsTLWindowModeDst.width = (textLabelHeight / TL_WINDOW_MODE.height) *
@@ -250,6 +255,12 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     settingsTLResolutionDst.y = getHeight() * SETTINGS_TL_RESOLUTION_TOP_POS;
     settingsTLResolutionDst.width = (textLabelHeight / TL_RESOLUTION.height) * TL_RESOLUTION.width;
     settingsTLResolutionDst.x = textLabelMaxX - settingsTLResolutionDst.width;
+
+    /* Update settings BoxSelectors size params */
+    resolutionBoxSel->setYPos(getHeight() * SETTINGS_BS_RESOLUTION_TOP_POS);
+    resolutionBoxSel->setHeight(getHeight() * SETTINGS_BS_HEIGHT_PCT);
+    distFromCenter = getHeight() * SETTINGS_TL_DIST_FROM_CTR_HEIGHT_PCT;
+    resolutionBoxSel->setXPos((getWidth() / 2 ) + distFromCenter);
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -310,6 +321,7 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
         case State::SHOW_SETTINGS:
             settingsApplyZoomSel->onMousePressed();
             settingsBackZoomSel->onMousePressed();
+            resolutionBoxSel->onMousePressed(pos);
             break;
         case State::FADE_TRANSITION:
             break;
@@ -346,10 +358,10 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         }
     } else if (source == settingsApplyZoomSel) {
         /* Handle click for settings submenu "apply" button */
-        static int configNumber = 0;
-        windowRequestCallback(Window::getWindowedConfigModes()[configNumber++]);
-        if (configNumber == Window::getNumWindowedConfigModes()) {
-            configNumber = 0;
+        int selectedIdx = resolutionBoxSel->getSelectedIndex();
+        if (selectedIdx != -1) {
+            selectedIdx = Window::getNumWindowedConfigModes() - 1 - selectedIdx;    // In reverse order
+            windowRequestCallback(Window::getWindowedConfigModes()[selectedIdx]);
         }
     } else if (source == settingsBackZoomSel) {
         /* Handle click for settings submenu "back" button */

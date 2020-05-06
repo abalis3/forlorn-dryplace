@@ -113,6 +113,12 @@ void BoxSelector::addItem(const std::string &content, bool selected)
     itemListTail = newItem;
 }
 
+int BoxSelector::getSelectedIndex()
+{
+    if (selectedItem == nullptr) return -1;
+    return selectedItem->index;
+}
+
 void BoxSelector::onMousePosUpdate(const raylib::Vector2 &pos)
 {
     raylib::Rectangle collisionLeft(boundingBox.x,
@@ -132,6 +138,33 @@ void BoxSelector::onMousePosUpdate(const raylib::Vector2 &pos)
         rightArrowTargetDimension = arrowMaxDimension;
     } else {
         rightArrowTargetDimension = arrowMinDimension;
+    }
+}
+
+void BoxSelector::onMousePressed(const raylib::Vector2 &pos)
+{
+    raylib::Rectangle collisionLeft(boundingBox.x,
+            boundingBox.y + (boundingBox.height - arrowMaxDimension) / 2,
+            arrowMaxDimension, arrowMaxDimension);
+    raylib::Rectangle collisionRight(boundingBox.x + boundingBox.width - arrowMaxDimension,
+            boundingBox.y + (boundingBox.height - arrowMaxDimension) / 2,
+            arrowMaxDimension, arrowMaxDimension);
+
+    if (collisionLeft.CheckCollision(pos)) {
+        /* IMPROVEMENT: make this a doubly linked list so we can step back one */
+        if (selectedItem == nullptr) return;
+        int targetIndex = selectedItem->index - 1;
+        if (targetIndex == -1) {
+            selectedItem = itemListTail;
+            return;
+        }
+        selectedItem = itemListHead;
+        while (selectedItem->index != targetIndex) {
+            selectedItem = selectedItem->next;
+        }
+    } else if (collisionRight.CheckCollision(pos)) {
+        selectedItem = selectedItem->next;
+        if (selectedItem == nullptr) selectedItem = itemListHead;
     }
 }
 

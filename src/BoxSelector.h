@@ -36,12 +36,18 @@ class BoxSelector : public OpacityDependent {
     /* Adds an item (in-order) to the BoxSelector with given text content. */
     void addItem(const std::string &content, bool selected);
 
+    /* Return the index of the currently-selected entry. If nothing selected, return -1 */
+    int getSelectedIndex();
+
     /*
      * Handle mouse position update from window - this function looks for
      * a collision with each arrow button to determine if a hover
      * zoom should take place
      */ 
     void onMousePosUpdate(const raylib::Vector2 &pos);
+
+    /* Handle a mouse button click. Specifically, check if it was a click on an arrow button */
+    void onMousePressed(const raylib::Vector2 &pos);
 
     /* Called once per game loop to update the animations of the box selector */
     void update(double secs); 
