@@ -7,6 +7,7 @@
 #include "Scene.h"
 #include "ZoomSelector.h"
 #include "BoxSelector.h"
+#include "SelectableButton.h"
 
 class MainMenu : public Scene {
  public:
@@ -168,11 +169,18 @@ class MainMenu : public Scene {
     /* Opacity variable for current opacity of text labels on settings submenu */
     float settingsTLOpacity;
 
+    /* SelectableButtons for settings page window mode options */
+    SelectableButton *windowedSelButton;
+    SelectableButton *fullscreenSelButton;
+
     /* BoxSelector for resolution option on settings menu */
     BoxSelector *resolutionBoxSel;
 
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);
+
+    /* Callback to be registered for when a SelectableButton gets clicked */
+    void onSelectableButtonSelected(SelectableButton *source);
 
     /*
      * Initiate the fade to another submenu state. This includes setting the from and to states,

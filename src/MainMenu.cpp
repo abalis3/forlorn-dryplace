@@ -98,6 +98,14 @@ MainMenu::MainMenu()
     settingsBackZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     settingsBackZoomSel->setDependentOpacity(0);
 
+    /* Initialize settings submenu selectable buttons */
+    raylib::Rectangle selectedSrc(0, 0, 0, 0);
+    raylib::Rectangle unselectedSrc(0, 0, 0, 0);
+    windowedSelButton = new SelectableButton((raylib::Texture*) nullptr, selectedSrc, unselectedSrc, false);
+    fullscreenSelButton = new SelectableButton((raylib::Texture*) nullptr, selectedSrc, unselectedSrc, true);
+    windowedSelButton->setCallback(std::bind(&MainMenu::onSelectableButtonSelected, this, _1));
+    fullscreenSelButton->setCallback(std::bind(&MainMenu::onSelectableButtonSelected, this, _1));
+
     /* Initialize settings submenu box selector */
     resolutionBoxSel = new BoxSelector();
     /* Enter resolutions, starting with highest. Highest mode will be selected as first entry */
@@ -256,6 +264,14 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     settingsTLResolutionDst.width = (textLabelHeight / TL_RESOLUTION.height) * TL_RESOLUTION.width;
     settingsTLResolutionDst.x = textLabelMaxX - settingsTLResolutionDst.width;
 
+    /* Update settings SelectableButtons size params */
+    windowedSelButton->setHeight(80);
+    fullscreenSelButton->setHeight(80);
+    windowedSelButton->setY(500);
+    fullscreenSelButton->setY(500);
+    windowedSelButton->setX(1000);
+    fullscreenSelButton->setX(1300);
+
     /* Update settings BoxSelectors size params */
     resolutionBoxSel->setYPos(getHeight() * SETTINGS_BS_RESOLUTION_TOP_POS);
     resolutionBoxSel->setHeight(getHeight() * SETTINGS_BS_HEIGHT_PCT);
@@ -321,6 +337,8 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
         case State::SHOW_SETTINGS:
             settingsApplyZoomSel->onMousePressed();
             settingsBackZoomSel->onMousePressed();
+            windowedSelButton->onMousePressed(pos);
+            fullscreenSelButton->onMousePressed(pos);
             resolutionBoxSel->onMousePressed(pos);
             break;
         case State::FADE_TRANSITION:
@@ -366,6 +384,15 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
     } else if (source == settingsBackZoomSel) {
         /* Handle click for settings submenu "back" button */
         initiateFadeToState(State::SHOW_TOPLEVEL);
+    }
+}
+
+void MainMenu::onSelectableButtonSelected(SelectableButton *source)
+{
+    if (source == windowedSelButton) {
+        fullscreenSelButton->setSelected(false);
+    } else if (source == fullscreenSelButton) {
+        windowedSelButton->setSelected(false);
     }
 }
 
@@ -448,6 +475,8 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
                 settingsTLOpacity);
         renderer->drawTexture(textLabelTexture, TL_RESOLUTION, settingsTLResolutionDst,
                 settingsTLOpacity);
+        windowedSelButton->render(renderer);
+        fullscreenSelButton->render(renderer);
         resolutionBoxSel->render(renderer);
         settingsApplyZoomSel->render(renderer);
         settingsBackZoomSel->render(renderer);
