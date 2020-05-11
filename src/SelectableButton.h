@@ -19,8 +19,8 @@ class SelectableButton : public OpacityDependent {
      * Constructor - requires texture with image to draw, and rectangles that tell where
      * on the given source texture the selected and unselected texture content can be found.
      */
-    SelectableButton(raylib::Texture *tex, raylib::Rectangle &selectedSrc,
-            raylib::Rectangle &unselectedSrc, bool selected);
+    SelectableButton(raylib::Texture *tex, const raylib::Rectangle &selectedSrc,
+            const raylib::Rectangle &unselectedSrc, bool selected);
 
     /* Called to set the on-screen height of the SelectableButton, which decides its width too */
     void setHeight(float height);
@@ -34,6 +34,9 @@ class SelectableButton : public OpacityDependent {
 
     /* Set if this button is currently selected or not */
     void setSelected(bool selected);
+
+    /* Get if the button is currently selected or not */
+    bool isSelected();
 
     /*
      * Registers the given function as a callback for when this button gets selected.

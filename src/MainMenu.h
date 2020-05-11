@@ -18,8 +18,11 @@ class MainMenu : public Scene {
         EXIT_PROGRAM,
     };
 
-    /* Default constructor - inits necessary values and loads textures */ 
-    MainMenu();
+    /*
+     * Constructor - inits necessary values and loads textures.
+     * windowIsFullscreen tells what the current window fullscreen mode is at menu load time
+     */ 
+    MainMenu(bool windowIsFullscreen);
 
     /* Destructor - frees any memory used by MainMenu */
     ~MainMenu();
@@ -68,6 +71,9 @@ class MainMenu : public Scene {
 
     /* Texture for text labels on various screens in the menu */
     raylib::Texture *textLabelTexture;
+
+    /* Texture holding the contents of all SelectableButton objects */
+    raylib::Texture *selButtonTexture;
 
     /* Stores the next update that will be conveyed to the game runner */
     ReturnCode nextReturnCode;

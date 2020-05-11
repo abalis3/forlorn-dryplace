@@ -102,6 +102,11 @@ int Window::getFPS()
     return raylibWindow->GetFPS();
 }
 
+bool Window::isFullscreen()
+{
+    return raylibWindow->IsFullscreen();
+}
+
 bool Window::shouldClose()
 {
     return raylibWindow->ShouldClose();
@@ -173,10 +178,18 @@ void Window::renderFPS()
 
 void Window::updateConfiguration(const WindowConfiguration &config)
 {
+    if (config.windowWidth != getWidth() || config.windowHeight != getHeight()) {
+        if (config.windowWidth == 0 && config.windowHeight == 0) {
+            raylibWindow->SetSize(GetMonitorWidth(0), GetMonitorHeight(0));
+        } else {
+            raylibWindow->SetSize(config.windowWidth, config.windowHeight);
+        }
+    }
+
     if (config.isFullscreen != raylibWindow->IsFullscreen()){
         raylibWindow->ToggleFullscreen();
     }
-    raylibWindow->SetSize(config.windowWidth, config.windowHeight);
+
     raylibWindow->SetPosition((GetMonitorWidth(0) - config.windowWidth) / 2,
             (GetMonitorHeight(0) - config.windowHeight) / 2);
     recalculateSizeParams();

@@ -42,7 +42,7 @@ class GameRunner {
 GameRunner::GameRunner()
 {
 	window = new Window();
-	mainMenu = new MainMenu();
+	mainMenu = new MainMenu(window->isFullscreen());
 	mainMenu->setWindowRequestCallback(std::bind(&GameRunner::onWindowRequest, this, _1));
 	window->flipToScene(mainMenu);
 }

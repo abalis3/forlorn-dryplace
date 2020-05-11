@@ -7,6 +7,7 @@ static const char BACKGROUND_IMG_PATH[] = "MainMenu/desert-background.png";
 static const char TITLE_IMG_PATH[] = "MainMenu/main-title.png";
 static const char ZOOMSELECTOR_IMG_PATH[] = "MainMenu/zoomselector.png";
 static const char TEXT_LABEL_PATHS[] = "MainMenu/text-labels.png";
+static const char SELECTABLEBUTTON_IMG_PATH[] = "MainMenu/selectablebutton.png";
 
 /* Background pan animation parameters */
 static const float BG_MAX_SPEED = 0.02;
@@ -40,9 +41,13 @@ static const float SETTINGS_ZS_DIST_FROM_CTR_HEIGHT_PCT = 1.2;      // relative 
 static const float SETTINGS_TL_HEIGHT_PCT = 0.04;
 static const float SETTINGS_TL_WINDOW_MODE_TOP_POS = 0.48;
 static const float SETTINGS_TL_RESOLUTION_TOP_POS = 0.62;
-static const float SETTINGS_TL_DIST_FROM_CTR_HEIGHT_PCT = 0.05;   // relative to scene height
-static const float SETTINGS_BS_RESOLUTION_TOP_POS = 0.605;
-static const float SETTINGS_BS_HEIGHT_PCT = 0.06;                   // relative to scene height
+static const float SETTINGS_TL_DIST_FROM_CTR_PCT = 0.3;   // relative to scene height
+static const float SETTINGS_SB_TOP_POS = 0.465;
+static const float SETTINGS_SB_HEIGHT_PCT = 0.06;
+static const float SETTINGS_SB_DIST_FROM_CTR_PCT = 0.00;    // relative to scene height
+static const float SETTINGS_SB_PADDING_BETWEEN = 0.05;      // relative to scene height
+static const float SETTINGS_BS_RESOLUTION_TOP_POS = 0.605;  // relative to scene height
+static const float SETTINGS_BS_HEIGHT_PCT = 0.06;           // relative to scene height
 
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -53,6 +58,12 @@ static const raylib::Rectangle ZS_TEXT_EXIT(0, 411, 189, 137);
 static const raylib::Rectangle ZS_TEXT_APPLY(0, 548, 295, 137);
 static const raylib::Rectangle ZS_TEXT_BACK(0, 685, 232, 137);
 
+/* Definitions for positions of particular entries on SelectableButton texture */
+static const raylib::Rectangle SB_WINDOWED_UNSELECTED(0, 0, 788, 192);
+static const raylib::Rectangle SB_WINDOWED_SELECTED(0, 192, 788, 192);
+static const raylib::Rectangle SB_FULLSCREEN_UNSELECTED(788, 0, 832, 192);
+static const raylib::Rectangle SB_FULLSCREEN_SELECTED(788, 192, 832, 192);
+
 /* Definitions for positions of particular entries in the text label texture */
 static const raylib::Rectangle TL_WINDOW_MODE(0, 0, 772, 137);
 static const raylib::Rectangle TL_RESOLUTION(0, 137, 608, 137);
@@ -60,7 +71,7 @@ static const raylib::Rectangle TL_RESOLUTION(0, 137, 608, 137);
 /* For std::bind _1, _2 ... */
 using namespace std::placeholders;
 
-MainMenu::MainMenu()
+MainMenu::MainMenu(bool windowIsFullscreen)
 {
     /* Initialize some generic fields */
     bgSrcXPercent = 0;
@@ -77,6 +88,8 @@ MainMenu::MainMenu()
     titleTexture->GenMipmaps();
     textLabelTexture = new raylib::Texture(Util::formResourcePath(TEXT_LABEL_PATHS));
     textLabelTexture->GenMipmaps();
+    selButtonTexture = new raylib::Texture(Util::formResourcePath(SELECTABLEBUTTON_IMG_PATH));
+    selButtonTexture->GenMipmaps();
     settingsTLOpacity = 0;
 
     /* Initialize top level menu zoom selector */
@@ -99,12 +112,14 @@ MainMenu::MainMenu()
     settingsBackZoomSel->setDependentOpacity(0);
 
     /* Initialize settings submenu selectable buttons */
-    raylib::Rectangle selectedSrc(0, 0, 0, 0);
-    raylib::Rectangle unselectedSrc(0, 0, 0, 0);
-    windowedSelButton = new SelectableButton((raylib::Texture*) nullptr, selectedSrc, unselectedSrc, false);
-    fullscreenSelButton = new SelectableButton((raylib::Texture*) nullptr, selectedSrc, unselectedSrc, true);
+    windowedSelButton = new SelectableButton(selButtonTexture, SB_WINDOWED_SELECTED,
+            SB_WINDOWED_UNSELECTED, !windowIsFullscreen);
+    fullscreenSelButton = new SelectableButton(selButtonTexture, SB_FULLSCREEN_SELECTED,
+            SB_FULLSCREEN_UNSELECTED, windowIsFullscreen);
     windowedSelButton->setCallback(std::bind(&MainMenu::onSelectableButtonSelected, this, _1));
     fullscreenSelButton->setCallback(std::bind(&MainMenu::onSelectableButtonSelected, this, _1));
+    windowedSelButton->setDependentOpacity(0);
+    fullscreenSelButton->setDependentOpacity(0);
 
     /* Initialize settings submenu box selector */
     resolutionBoxSel = new BoxSelector();
@@ -122,7 +137,10 @@ MainMenu::~MainMenu()
     delete bgTexture;
     delete titleTexture;
     delete textLabelTexture;
+    delete selButtonTexture;
     delete toplevelZoomSel;
+    delete windowedSelButton;
+    delete fullscreenSelButton;
     delete settingsApplyZoomSel;
     delete settingsBackZoomSel;
     delete resolutionBoxSel;
@@ -234,6 +252,8 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     float zoomSelHeight, zoomSelYPos, zoomSelItemPadding;
     float textLabelHeight, textLabelMaxX;
     float distFromCenter;
+    float selButtonXPos;
+    float ctrStartCoord, ctrEndCoord;
 
     /* Update toplevel ZoomSelector size params */
     zoomSelHeight = (TOPLEVEL_ZS_BOT_POS - TOPLEVEL_ZS_TOP_POS) * getHeight();
@@ -253,7 +273,7 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
 
     /* Update settings menu text labels size params */
     textLabelHeight = getHeight() * SETTINGS_TL_HEIGHT_PCT;
-    textLabelMaxX = (getWidth() / 2) - (getHeight() * SETTINGS_TL_DIST_FROM_CTR_HEIGHT_PCT);
+    textLabelMaxX = (getWidth() / 2) - (getHeight() * SETTINGS_TL_DIST_FROM_CTR_PCT);
     settingsTLWindowModeDst.height = textLabelHeight;
     settingsTLWindowModeDst.y = getHeight() * SETTINGS_TL_WINDOW_MODE_TOP_POS;
     settingsTLWindowModeDst.width = (textLabelHeight / TL_WINDOW_MODE.height) *
@@ -265,18 +285,24 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     settingsTLResolutionDst.x = textLabelMaxX - settingsTLResolutionDst.width;
 
     /* Update settings SelectableButtons size params */
-    windowedSelButton->setHeight(80);
-    fullscreenSelButton->setHeight(80);
-    windowedSelButton->setY(500);
-    fullscreenSelButton->setY(500);
-    windowedSelButton->setX(1000);
-    fullscreenSelButton->setX(1300);
+    windowedSelButton->setHeight(getHeight() * SETTINGS_SB_HEIGHT_PCT);
+    fullscreenSelButton->setHeight(getHeight() * SETTINGS_SB_HEIGHT_PCT);
+    windowedSelButton->setY(getHeight() * SETTINGS_SB_TOP_POS);
+    fullscreenSelButton->setY(getHeight() * SETTINGS_SB_TOP_POS);
+    distFromCenter = SETTINGS_SB_DIST_FROM_CTR_PCT * getHeight();
+    selButtonXPos = (getWidth() / 2) + distFromCenter;
+    ctrStartCoord = selButtonXPos;
+    windowedSelButton->setX(selButtonXPos);
+    selButtonXPos += windowedSelButton->getWidth();
+    selButtonXPos += SETTINGS_SB_PADDING_BETWEEN * getHeight();
+    fullscreenSelButton->setX(selButtonXPos);
+    ctrEndCoord = selButtonXPos + fullscreenSelButton->getWidth();
 
     /* Update settings BoxSelectors size params */
     resolutionBoxSel->setYPos(getHeight() * SETTINGS_BS_RESOLUTION_TOP_POS);
     resolutionBoxSel->setHeight(getHeight() * SETTINGS_BS_HEIGHT_PCT);
-    distFromCenter = getHeight() * SETTINGS_TL_DIST_FROM_CTR_HEIGHT_PCT;
-    resolutionBoxSel->setXPos((getWidth() / 2 ) + distFromCenter);
+    distFromCenter = getHeight() * SETTINGS_TL_DIST_FROM_CTR_PCT;
+    resolutionBoxSel->setXPos((ctrStartCoord + ctrEndCoord - resolutionBoxSel->getWidth()) / 2);
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -339,7 +365,9 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
             settingsBackZoomSel->onMousePressed();
             windowedSelButton->onMousePressed(pos);
             fullscreenSelButton->onMousePressed(pos);
-            resolutionBoxSel->onMousePressed(pos);
+            if (windowedSelButton->isSelected()){
+                resolutionBoxSel->onMousePressed(pos);
+            }
             break;
         case State::FADE_TRANSITION:
             break;
@@ -376,10 +404,19 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         }
     } else if (source == settingsApplyZoomSel) {
         /* Handle click for settings submenu "apply" button */
-        int selectedIdx = resolutionBoxSel->getSelectedIndex();
-        if (selectedIdx != -1) {
-            selectedIdx = Window::getNumWindowedConfigModes() - 1 - selectedIdx;    // In reverse order
-            windowRequestCallback(Window::getWindowedConfigModes()[selectedIdx]);
+        if (fullscreenSelButton->isSelected()) {
+            WindowConfiguration cfg = {
+                .isFullscreen = true,
+                .windowWidth = 0,
+                .windowHeight = 0,
+            };
+            windowRequestCallback(cfg);
+        } else {
+            int selectedIdx = resolutionBoxSel->getSelectedIndex();
+            if (selectedIdx != -1) {
+                selectedIdx = Window::getNumWindowedConfigModes() - 1 - selectedIdx;    // In reverse order
+                windowRequestCallback(Window::getWindowedConfigModes()[selectedIdx]);
+            }
         }
     } else if (source == settingsBackZoomSel) {
         /* Handle click for settings submenu "back" button */
@@ -416,6 +453,8 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
         settingsBackZoomSel->setDependentOpacity(opacity);
         settingsApplyZoomSel->setDependentOpacity(opacity);
         settingsTLOpacity = opacity;
+        windowedSelButton->setDependentOpacity(opacity);
+        fullscreenSelButton->setDependentOpacity(opacity);
         resolutionBoxSel->setDependentOpacity(opacity);
         break;
 
@@ -473,11 +512,13 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
     case State::SHOW_SETTINGS:
         renderer->drawTexture(textLabelTexture, TL_WINDOW_MODE, settingsTLWindowModeDst,
                 settingsTLOpacity);
-        renderer->drawTexture(textLabelTexture, TL_RESOLUTION, settingsTLResolutionDst,
-                settingsTLOpacity);
         windowedSelButton->render(renderer);
         fullscreenSelButton->render(renderer);
-        resolutionBoxSel->render(renderer);
+        if (windowedSelButton->isSelected()) {
+            renderer->drawTexture(textLabelTexture, TL_RESOLUTION, settingsTLResolutionDst,
+                    settingsTLOpacity);
+            resolutionBoxSel->render(renderer);
+        }
         settingsApplyZoomSel->render(renderer);
         settingsBackZoomSel->render(renderer);
         break;

@@ -1,7 +1,7 @@
 #include "SelectableButton.h"
 
-SelectableButton::SelectableButton(raylib::Texture *tex, raylib::Rectangle &selectedSrc,
-        raylib::Rectangle &unselectedSrc, bool selected)
+SelectableButton::SelectableButton(raylib::Texture *tex, const raylib::Rectangle &selectedSrc,
+        const raylib::Rectangle &unselectedSrc, bool selected)
 {
     contentTexture = tex;
     this->selectedSrc = selectedSrc;
@@ -17,7 +17,7 @@ SelectableButton::SelectableButton(raylib::Texture *tex, raylib::Rectangle &sele
 void SelectableButton::setHeight(float height)
 {
     dstRect.height = height;
-    dstRect.width = height * 3;
+    dstRect.width = (dstRect.height / contentTexture->GetHeight()) * contentTexture->GetWidth();
 }
 
 void SelectableButton::setX(float xPos)
@@ -38,6 +38,11 @@ float SelectableButton::getWidth()
 void SelectableButton::setSelected(bool selected)
 {
     this->selected = selected;
+}
+
+bool SelectableButton::isSelected()
+{
+    return selected;
 }
 
 void SelectableButton::setCallback(std::function<void(SelectableButton*)> cb)
@@ -62,10 +67,8 @@ void SelectableButton::onMousePressed(const raylib::Vector2 &pos)
 void SelectableButton::render(Renderer *renderer)
 {
     if (selected) {
-        renderer->setColor(GREEN);
+        renderer->drawTexture(contentTexture, selectedSrc, dstRect, getDependentOpacity());
     } else {
-        renderer->setColor(RED);
+        renderer->drawTexture(contentTexture, unselectedSrc, dstRect, getDependentOpacity());
     }
-
-    renderer->drawRectangle(dstRect.x, dstRect.y, dstRect.width, dstRect.height);
 }

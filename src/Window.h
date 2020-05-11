@@ -46,6 +46,9 @@ class Window {
     /* Get the current approximate FPS of the window */
     int getFPS();
 
+    /* Determine if the window is currently displaying in fullscreen mode */
+    bool isFullscreen();
+
     /* 
      * Return true when window has received user input request
      * to exit (like clicking the X), otherwise false.
