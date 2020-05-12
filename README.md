@@ -13,6 +13,17 @@
 
 An implementation of a favorite board game in C++ using raylib.
 
+## To Download and Run Game
+
+### Windows
+- Go to the [releases](https://github.com/abalis3/forlorn-dryplace/releases) tab on github and find the desired release version
+- Download the forbidden-desert-windows-[version].zip file under the release assets
+- Extract the downloaded zip and enter the forbidden-desert folder within
+- If you have an antivirus, it likely has to be disabled since this is not a trusted widespread-use program
+- Run the forbidden-desert executable. When you click it, windows defender may warn it is not from a trusted publisher. If this happens, click 'More Info' and then the 'Run Anyway' button that appears
+
+## To Contribute Code
+
 ### Windows Setup
 - Install raylib with mingw installer (installs to C:\raylib)
 - Add g++ to path (C:\raylib\mingw\bin)
