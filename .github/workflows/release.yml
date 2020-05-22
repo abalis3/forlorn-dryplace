@@ -91,14 +91,17 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: linux-executable
+        path: linux-executable
     - name: Download mac build artifact
       uses: actions/download-artifact@v2
       with:
         name: macOS-executable
+        path: macOS-executable
     - name: Download windows build artifact
       uses: actions/download-artifact@v2
       with:
         name: windows-build
+        path: windows-build
     - name: Setup Node.js
       uses: actions/setup-node@v1
       with:
