@@ -12,12 +12,20 @@ jobs:
     steps:
     - name: Checkout commit code
       uses: actions/checkout@v2
-    - name: Install dependencies
-      run: ./ci/installLinuxDependencies.sh
+      with:
+        submodules: true
+    - name: Install Package Manager Deps
+      run: ./scripts/installLinuxDependencies.sh
+    - name: Grab or Build Vcpkg Deps
+      uses: lukka/run-vcpkg@v2
+      with:
+        vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
     - name: Build executable
-      run: ./linux-build.sh CI
+      run: ./linux-build.sh
     - name: Upload executable as artifact
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
       with:
         name: linux-executable
         path: bin/forbidden-desert
@@ -28,12 +36,18 @@ jobs:
     steps:
     - name: Checkout commit code
       uses: actions/checkout@v2
-    - name: Install dependencies
-      run: ./ci/installMacDependencies.sh
+      with:
+        submodules: true
+    - name: Grab or Build Vcpkg Deps
+      uses: lukka/run-vcpkg@v2
+      with:
+        vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
     - name: Build executable
-      run: ./mac-build.sh CI
+      run: ./mac-build.sh
     - name: Upload executable as artifact
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2
       with:
         name: macOS-executable
         path: bin/forbidden-desert
@@ -44,12 +58,20 @@ jobs:
     steps:
     - name: Checkout commit code
       uses: actions/checkout@v2
-    - name: Install raylib
-      run: ./ci/installWindowsDependencies
-    - name: Build executable
-      run: ./win-build.bat CI
-    - name: Upload executable as artifact
-      uses: actions/upload-artifact@v1
       with:
-        name: windows-executable
-        path: bin/forbidden-desert.exe
+        submodules: true
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.0
+    - name: Grab or Build Vcpkg Deps
+      uses: lukka/run-vcpkg@v2
+      with:
+        vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
+    - name: Build executable
+      run: ./win-build.bat
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-build
+        path: bin/*

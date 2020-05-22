@@ -34,3 +34,5 @@
 /bin
 /raylib
 /.vscode
+*.pb.cc
+*.pb.h

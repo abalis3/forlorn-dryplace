@@ -11,7 +11,7 @@
         "assets": [
           {"path": "linux-executable/forbidden-desert-ubuntu-*.tar.gz"},
           {"path": "macOS-executable/forbidden-desert-macOS-*.tar.gz"},
-          {"path": "windows-executable/forbidden-desert-windows-*.zip"}
+          {"path": "windows-build/forbidden-desert-windows-*.zip"}
         ]
       }]
     ]

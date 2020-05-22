@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package pbuf;
+
+message WindowConfiguration {
+    bool fullscreen = 1;
+    uint32 window_width = 2;
+    uint32 window_height = 3;
+}

@@ -406,9 +406,9 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         /* Handle click for settings submenu "apply" button */
         if (fullscreenSelButton->isSelected()) {
             WindowConfiguration cfg = {
-                .isFullscreen = true,
-                .windowWidth = 0,
-                .windowHeight = 0,
+                true,   /* isFullscreen */
+                0,      /* windowWidth */
+                0       /* windowHeight */
             };
             windowRequestCallback(cfg);
         } else {

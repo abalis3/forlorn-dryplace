@@ -25,9 +25,11 @@ An implementation of a favorite board game in C++ using raylib.
 ## To Contribute Code
 
 ### Windows Setup
-- Install raylib with mingw installer (installs to C:\raylib)
-- Add g++ to path (C:\raylib\mingw\bin)
-- Clone this repo and run win-build.bat to create executable
+- Install Visual Studio C++
+- Add MSBuild to your path (Usually in C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin)
+- Clone this repository
+- Run install-deps.bat to pull required libraries
+- Run win-build.bat to create executable in bin/
 
 ### Linux Setup
 - Install raylib (Use version 3.0.0!) following https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux

@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "MainMenu.h"
 #include "Util.h"
+#include "pbuf/generated/WindowConfiguration.pb.h"
 
 using namespace std::placeholders;
 

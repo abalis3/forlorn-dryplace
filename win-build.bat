@@ -1,14 +1,13 @@
 @ECHO OFF
-rmdir /s /q bin
+rmdir /s /q bin > NUL 2>&1
+rmdir /s /q "src/pbuf/generated" > NUL 2>&1
 mkdir bin
+mkdir "src/pbuf/generated"
 
-if "%*"=="CI" (
-    windres ci/windowsicon.rc ci/windowsicon.o
-    g++ -m64 -DRAYLIB_CPP_NO_MATH=1 -I raylib/include/ -I include/ -L raylib/lib ci/windowsicon.o src/*.cpp -lopengl32 -static -lraylib_static -lpthread -lwinmm -lgdi32 -o bin/forbidden-desert.exe
-    echo.
-    echo Built executable for CI
-) else (
-    g++ -DRAYLIB_CPP_NO_MATH=1 -I include/ src/*.cpp -lraylib -lopengl32 -lgdi32 -lwinmm -static -lpthread -o bin/forbidden-desert.exe
-    echo.
-    echo Built executable in 'bin/forbidden-desert.exe'
-)
+
+start /B /WAIT ./vcpkg/installed/x86-windows/tools/protobuf/protoc -I ./src/pbuf --cpp_out=./src/pbuf/generated ./src/pbuf/*.proto
+msbuild /verbosity:quiet /p:OutDir=bin/ /p:configuration=release forbidden-desert.vcxproj
+rmdir /s /q release
+copy .\vcpkg\installed\x86-windows\bin\raylib.dll .\bin > NUL
+copy .\vcpkg\installed\x86-windows\bin\libprotobuf.dll .\bin > NUL
+echo Built executable in 'bin/forbidden-desert.exe'

@@ -18,9 +18,11 @@ cp -r ../res Forbidden\ Desert.app/Contents/MacOS
 tar -czpvf forbidden-desert-macOS-v$1.tar.gz *
 cd ..
 
-cd windows-executable
+cd windows-build
 mkdir forbidden-desert
 mv forbidden-desert.exe forbidden-desert/forbidden-desert.exe
+mv raylib.dll forbidden-desert/raylib.dll
+mv libprotobuf.dll forbidden-desert/libprotobuf.dll
 cp -r ../res forbidden-desert
 zip -r forbidden-desert-windows-v$1.zip *
 cd ..
