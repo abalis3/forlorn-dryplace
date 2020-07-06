@@ -45,7 +45,12 @@ class Util {
  private:
 
     /* Holds the absolute path to the directory where the executable resides */
-    static std::string exeDir; 
+    static std::string exeDir;
+
+#ifndef COMPILING_ON_WINDOWS
+    /* Holds the path to the home directory (on Linux or MAC) */
+    static std::string homeDir;
+#endif
 
     /* 
      * Forms the given filepath relative to the persistent data folder

@@ -11,6 +11,7 @@ static const char PREFS_DIRECTORY_NAME[] = "preferences";
 static const char DIRECTORY_DELIM = '\\';
 #else
 static const char DIRECTORY_DELIM = '/';
+std::string Util::homeDir;
 #endif
 
 std::string Util::exeDir;
@@ -57,15 +58,24 @@ std::string Util::formPersistDataPath(std::string relativePath)
     path += "Low\\abalis3\\forbidden-desert\\";
     path += relativePath;
     return path;
-#elif COMPILING_ON_OSX
+#else
+    /* Compiling on Linux or OSX */
+
+    /* Get the path to the home (~) directory */
+    if (homeDir == "") {
+        homeDir = std::string(std::getenv("HOME"));
+    }
+
+#if COMPILING_ON_OSX
     /* Get to '~/Library/Application Support/abalis3/forbidden-desert/' */
-    std::string path = "~/Library/Application Support/abalis3/forbidden-desert/";
-    return path;
+    return homeDir + "/Library/Application Support/abalis3/forbidden-desert/";
 #else /* Compiling on Linux */
     /* Get to '~/.abalis3/forbidden-desert/' */
-    std::string path = "~/.abalis3/forbidden-desert/";
-    return path;
+    return homeDir + "/.abalis3/forbidden-desert/";
 #endif
+
+#endif
+
 }
 
 void Util::initDirectoriesForPath(std::string path)
