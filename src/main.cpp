@@ -3,7 +3,6 @@
 #include "Window.h"
 #include "MainMenu.h"
 #include "Util.h"
-#include "pbuf/generated/WindowConfiguration.pb.h"
 
 using namespace std::placeholders;
 
@@ -43,7 +42,7 @@ class GameRunner {
 GameRunner::GameRunner()
 {
 	window = new Window();
-	mainMenu = new MainMenu(window->isFullscreen());
+	mainMenu = new MainMenu(*window);
 	mainMenu->setWindowRequestCallback(std::bind(&GameRunner::onWindowRequest, this, _1));
 	window->flipToScene(mainMenu);
 }

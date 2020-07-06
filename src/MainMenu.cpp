@@ -71,7 +71,7 @@ static const raylib::Rectangle TL_RESOLUTION(0, 137, 608, 137);
 /* For std::bind _1, _2 ... */
 using namespace std::placeholders;
 
-MainMenu::MainMenu(bool windowIsFullscreen)
+MainMenu::MainMenu(Window &window)
 {
     /* Initialize some generic fields */
     bgSrcXPercent = 0;
@@ -113,9 +113,9 @@ MainMenu::MainMenu(bool windowIsFullscreen)
 
     /* Initialize settings submenu selectable buttons */
     windowedSelButton = new SelectableButton(selButtonTexture, SB_WINDOWED_SELECTED,
-            SB_WINDOWED_UNSELECTED, !windowIsFullscreen);
+            SB_WINDOWED_UNSELECTED, !window.isFullscreen());
     fullscreenSelButton = new SelectableButton(selButtonTexture, SB_FULLSCREEN_SELECTED,
-            SB_FULLSCREEN_UNSELECTED, windowIsFullscreen);
+            SB_FULLSCREEN_UNSELECTED, window.isFullscreen());
     windowedSelButton->setCallback(std::bind(&MainMenu::onSelectableButtonSelected, this, _1));
     fullscreenSelButton->setCallback(std::bind(&MainMenu::onSelectableButtonSelected, this, _1));
     windowedSelButton->setDependentOpacity(0);

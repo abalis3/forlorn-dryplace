@@ -1,5 +1,18 @@
 #include "Util.h"
 
+#include <cstdlib>
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#include <experimental/filesystem>
+
+static const char PREFS_DIRECTORY_NAME[] = "preferences";
+
+/* Use backslash for windows, forward slash for other OS's */
+#if COMPILING_ON_WINDOWS
+static const char DIRECTORY_DELIM = '\\';
+#else
+static const char DIRECTORY_DELIM = '/';
+#endif
+
 std::string Util::exeDir;
 
 void Util::registerRunArgs(int argc, char *argv[])
@@ -27,4 +40,37 @@ std::string Util::formResourcePath(std::string resourceName)
 #else
     return "res/" + resourceName;
 #endif
+}
+
+std::string Util::formPrefsPath(std::string relativePath)
+{
+    std::string fullPrefsPath = formPersistDataPath(PREFS_DIRECTORY_NAME);
+    initDirectoriesForPath(fullPrefsPath);
+    return fullPrefsPath + DIRECTORY_DELIM + relativePath;
+}
+
+std::string Util::formPersistDataPath(std::string relativePath)
+{
+#if COMPILING_ON_WINDOWS
+    /* Get to '%APPDATA%/LocalLow/abalis3/forbidden-desert/' */
+    std::string path = std::string(std::getenv("LOCALAPPDATA"));
+    path += "Low\\abalis3\\forbidden-desert\\";
+    path += relativePath;
+    return path;
+#elif COMPILING_ON_OSX
+    /* Get to '~/Library/Application Support/abalis3/forbidden-desert/' */
+    std::string path = "~/Library/Application Support/abalis3/forbidden-desert/";
+    return path;
+#else /* Compiling on Linux */
+    /* Get to '~/.abalis3/forbidden-desert/' */
+    std::string path = "~/.abalis3/forbidden-desert/";
+    return path;
+#endif
+}
+
+void Util::initDirectoriesForPath(std::string path)
+{
+    if (!std::experimental::filesystem::exists(path)) {
+        std::experimental::filesystem::create_directories(path);
+    }
 }
