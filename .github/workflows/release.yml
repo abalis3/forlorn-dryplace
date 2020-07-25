@@ -6,6 +6,31 @@ on:
 
 jobs:
 
+  build-server:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout commit code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Grab or Build Vcpkg Deps
+      uses: lukka/run-vcpkg@v2
+      with:
+        vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
+    - name: Build executable
+      run: ./linux-build.sh
+      working-directory: ./server
+    - name: Archive the image
+      run: docker save -o server-container-img.tar abalis3/forbidden-desert-server:local
+    - name: Upload image as build artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: server-container
+        path: server-container-img.tar
+
   build-linux:
     runs-on: ubuntu-latest
 
@@ -90,6 +115,13 @@ jobs:
     steps:
     - name: Checkout commit code
       uses: actions/checkout@v2
+    - name: Download server container artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: server-container
+        path: server-container
+    - name: Restore server image from archive
+      run: docker load -i server-container/server-container-img.tar
     - name: Download linux build artifact
       uses: actions/download-artifact@v2
       with:
@@ -116,4 +148,5 @@ jobs:
     - name: Release with semantic-release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+        DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       run: npx semantic-release
