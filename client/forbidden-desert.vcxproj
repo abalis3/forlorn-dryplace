@@ -16,12 +16,12 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./vcpkg/installed/x86-windows/include;./include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../vcpkg/installed/x86-windows/include;./include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>RAYLIB_CPP_NO_MATH=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>./vcpkg/installed/x86-windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../vcpkg/installed/x86-windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>raylib.lib;libprotobuf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

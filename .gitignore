@@ -31,8 +31,7 @@
 *.out
 
 # Custom
-/bin
-/raylib
+/client/bin
 /.vscode
 *.pb.cc
 *.pb.h

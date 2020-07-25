@@ -24,11 +24,12 @@ jobs:
         appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
     - name: Build executable
       run: ./linux-build.sh
+      working-directory: ./client
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v2
       with:
         name: linux-executable
-        path: bin/forbidden-desert
+        path: client/bin/forbidden-desert
 
   build-macos:
     runs-on: macos-latest
@@ -46,11 +47,12 @@ jobs:
         appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
     - name: Build executable
       run: ./mac-build.sh
+      working-directory: ./client
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v2
       with:
         name: macOS-executable
-        path: bin/forbidden-desert
+        path: client/bin/forbidden-desert
 
   build-windows:
     runs-on: windows-latest
@@ -70,11 +72,12 @@ jobs:
         appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
     - name: Build executable
       run: ./win-build.bat
+      working-directory: ./client
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v2
       with:
         name: windows-build
-        path: bin/*
+        path: client/bin/*
 
 
   release:

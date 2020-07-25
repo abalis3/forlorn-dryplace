@@ -5,7 +5,7 @@
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
       ["@semantic-release/exec", {
-        "prepareCmd": "./ci/prepareRelease.sh ${nextRelease.version}"
+        "prepareCmd": "./client/ci/prepareRelease.sh ${nextRelease.version}"
       }],
       ["@semantic-release/github", {
         "assets": [
