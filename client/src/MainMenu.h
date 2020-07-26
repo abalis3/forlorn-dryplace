@@ -20,9 +20,9 @@ class MainMenu : public Scene {
 
     /*
      * Constructor - inits necessary values and loads textures.
-     * windowIsFullscreen tells what the current window fullscreen mode is at menu load time
+     * window is a reference to the current window at menu load time
      */ 
-    MainMenu(bool windowIsFullscreen);
+    MainMenu(Window &window);
 
     /* Destructor - frees any memory used by MainMenu */
     ~MainMenu();

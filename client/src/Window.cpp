@@ -1,5 +1,11 @@
 #include "Window.h"
 
+#include <fstream>
+
+#include "Util.h"
+#include "pbuf/generated/WindowConfiguration.pb.h"
+
+static const char CFG_PREFS_FILE[] = "window_cfg.dat";
 static const char WINDOW_TITLE[] = "Forbidden Desert";
 static const int FPS_FONT_SIZE_DENOMINATOR = 15; // (1 / x) of window height
 
@@ -50,13 +56,25 @@ const WindowConfiguration* Window::getWindowedConfigModes()
 
 Window::Window()
 {
-    const struct WindowConfiguration defaultWindowConfig = {
+    struct WindowConfiguration windowConfig = {
         true,   /* isFullscreen */
         0,      /* windowWidth */
         0       /* windowHeight */
     };
 
-    constructWindow(defaultWindowConfig);
+    /* If there are saved preferences for window cofig, load them in using pbufs */
+    std::fstream cfgFileStream(Util::formPrefsPath(CFG_PREFS_FILE),
+            std::ios::in | std::ios::binary);
+    if (cfgFileStream.is_open()) {
+        pbuf::WindowConfiguration cfgPbuf;
+        cfgPbuf.ParseFromIstream(&cfgFileStream);
+        windowConfig.isFullscreen = cfgPbuf.fullscreen();
+        windowConfig.windowWidth = cfgPbuf.window_width();
+        windowConfig.windowHeight = cfgPbuf.window_height();
+        cfgFileStream.close();
+    }
+
+    constructWindow(windowConfig);
 }
 
 Window::Window(const struct WindowConfiguration &config)
@@ -193,4 +211,16 @@ void Window::updateConfiguration(const WindowConfiguration &config)
     raylibWindow->SetPosition((GetMonitorWidth(0) - config.windowWidth) / 2,
             (GetMonitorHeight(0) - config.windowHeight) / 2);
     recalculateSizeParams();
+
+    /* Write pbuf to preferences directory with new WindowConfiguration */
+    std::fstream cfgFileStream(Util::formPrefsPath(CFG_PREFS_FILE),
+            std::ios::out | std::ios::trunc | std::ios::binary);
+	if (cfgFileStream.is_open()) {
+		pbuf::WindowConfiguration cfgPbuf;
+		cfgPbuf.set_fullscreen(config.isFullscreen);
+		cfgPbuf.set_window_width(config.windowWidth);
+		cfgPbuf.set_window_height(config.windowHeight);
+		cfgPbuf.SerializeToOstream(&cfgFileStream);
+		cfgFileStream.close();
+	}
 }
