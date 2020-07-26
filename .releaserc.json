@@ -6,7 +6,7 @@
       "@semantic-release/release-notes-generator",
       ["@semantic-release/exec", {
         "prepareCmd": "./ci/prepareRelease.sh ${nextRelease.version}",
-        "publishCmd": "./ci/publish-release.sh ${nextRelease.version}"      
+        "publishCmd": "./ci/publishRelease.sh ${nextRelease.version}"      
       }],
       ["@semantic-release/github", {
         "assets": [
