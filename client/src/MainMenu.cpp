@@ -49,6 +49,13 @@ static const float SETTINGS_SB_PADDING_BETWEEN = 0.05;      // relative to scene
 static const float SETTINGS_BS_RESOLUTION_TOP_POS = 0.605;  // relative to scene height
 static const float SETTINGS_BS_HEIGHT_PCT = 0.06;           // relative to scene height
 
+/* Online name input submenu parameters */
+static const float OL_NAME_ZS_TOP_POS = 0.73;
+static const float OL_NAME_ZS_BOT_POS = 0.9;
+static const float OL_NAME_ZS_DIST_FROM_CTR_HEIGHT_PCT = 1.2;      // relative to height of ZS
+static const float OL_NAME_PROMPT_TL_HEIGHT_PCT = 0.05;
+static const float OL_NAME_PROMPT_TL_TOP_POS = 0.45;
+
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
 static const raylib::Rectangle ZS_TEXT_PLAY_LOCAL_GAME(0, 0, 894, 137);
@@ -57,6 +64,7 @@ static const raylib::Rectangle ZS_TEXT_SETTINGS(0, 274, 445, 137);
 static const raylib::Rectangle ZS_TEXT_EXIT(0, 411, 189, 137);
 static const raylib::Rectangle ZS_TEXT_APPLY(0, 548, 295, 137);
 static const raylib::Rectangle ZS_TEXT_BACK(0, 685, 232, 137);
+static const raylib::Rectangle ZS_TEXT_SUBMIT(0, 822, 384, 137);
 
 /* Definitions for positions of particular entries on SelectableButton texture */
 static const raylib::Rectangle SB_WINDOWED_UNSELECTED(0, 0, 788, 192);
@@ -67,6 +75,7 @@ static const raylib::Rectangle SB_FULLSCREEN_SELECTED(788, 192, 832, 192);
 /* Definitions for positions of particular entries in the text label texture */
 static const raylib::Rectangle TL_WINDOW_MODE(0, 0, 772, 137);
 static const raylib::Rectangle TL_RESOLUTION(0, 137, 608, 137);
+static const raylib::Rectangle TL_ENTER_A_NAME(0, 274, 790, 137);
 
 /* For std::bind _1, _2 ... */
 using namespace std::placeholders;
@@ -91,6 +100,7 @@ MainMenu::MainMenu(Window &window)
     selButtonTexture = new raylib::Texture(Util::formResourcePath(SELECTABLEBUTTON_IMG_PATH));
     selButtonTexture->GenMipmaps();
     settingsTLOpacity = 0;
+    olNameTLOpacity = 0;
 
     /* Initialize top level menu zoom selector */
     toplevelZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
@@ -130,6 +140,16 @@ MainMenu::MainMenu(Window &window)
                 std::to_string(cfg.windowHeight), false);
     }
     resolutionBoxSel->setDependentOpacity(0);
+
+    /* Initialize online name input submenu zoom selectors */
+    olNameSubmitZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    olNameSubmitZoomSel->addItem(ZS_TEXT_SUBMIT, ZS_TEXT_CENTER_Y);
+    olNameSubmitZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    olNameSubmitZoomSel->setDependentOpacity(0);
+    olNameBackZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    olNameBackZoomSel->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
+    olNameBackZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    olNameBackZoomSel->setDependentOpacity(0);
 }
 
 MainMenu::~MainMenu()
@@ -144,6 +164,8 @@ MainMenu::~MainMenu()
     delete settingsApplyZoomSel;
     delete settingsBackZoomSel;
     delete resolutionBoxSel;
+    delete olNameSubmitZoomSel;
+    delete olNameBackZoomSel;
 }
 
 void MainMenu::update(double secs)
@@ -303,6 +325,23 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     resolutionBoxSel->setHeight(getHeight() * SETTINGS_BS_HEIGHT_PCT);
     distFromCenter = getHeight() * SETTINGS_TL_DIST_FROM_CTR_PCT;
     resolutionBoxSel->setXPos((ctrStartCoord + ctrEndCoord - resolutionBoxSel->getWidth()) / 2);
+
+    /* Update online name input ZoomSelectors size params */
+    zoomSelHeight = (OL_NAME_ZS_BOT_POS - OL_NAME_ZS_TOP_POS) * getHeight();
+    zoomSelYPos = ((OL_NAME_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
+    zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
+    distFromCenter = zoomSelHeight * OL_NAME_ZS_DIST_FROM_CTR_HEIGHT_PCT;
+    olNameSubmitZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) - distFromCenter,
+            zoomSelYPos, zoomSelItemPadding);
+    olNameBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
+            zoomSelYPos, zoomSelItemPadding);
+
+    /* Update online name input text labels size params */
+    textLabelHeight = getHeight() * OL_NAME_PROMPT_TL_HEIGHT_PCT;
+    olNameTLPromptDst.height = textLabelHeight;
+    olNameTLPromptDst.y = getHeight() * OL_NAME_PROMPT_TL_TOP_POS;
+    olNameTLPromptDst.width = (textLabelHeight / TL_ENTER_A_NAME.height) * TL_ENTER_A_NAME.width;
+    olNameTLPromptDst.x = (getWidth() - olNameTLPromptDst.width) / 2;
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -369,6 +408,10 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
                 resolutionBoxSel->onMousePressed(pos);
             }
             break;
+        case State::SHOW_ONLINE_NAME_INPUT:
+            olNameSubmitZoomSel->onMousePressed();
+            olNameBackZoomSel->onMousePressed();
+            break;
         case State::FADE_TRANSITION:
             break;
         }
@@ -387,6 +430,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Play Online */
         case 1:
+            initiateFadeToState(State::SHOW_ONLINE_NAME_INPUT);
             break;
 
         /* Settings */
@@ -420,6 +464,11 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         }
     } else if (source == settingsBackZoomSel) {
         /* Handle click for settings submenu "back" button */
+        initiateFadeToState(State::SHOW_TOPLEVEL);
+    } else if (source == olNameSubmitZoomSel) {
+        /* Handle click for "submit" on online name selection screen */
+    } else if (source == olNameBackZoomSel) {
+        /* Handle click for "back" on online name selection screen */
         initiateFadeToState(State::SHOW_TOPLEVEL);
     }
 }
@@ -458,6 +507,11 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
         resolutionBoxSel->setDependentOpacity(opacity);
         break;
 
+    case State::SHOW_ONLINE_NAME_INPUT:
+        olNameTLOpacity = opacity;
+        olNameSubmitZoomSel->setDependentOpacity(opacity);
+        olNameBackZoomSel->setDependentOpacity(opacity);
+
     default:
         break;
     }
@@ -477,6 +531,10 @@ void MainMenu::updateForState(State menuState, double secs)
         resolutionBoxSel->update(secs);
         break;
 
+    case State::SHOW_ONLINE_NAME_INPUT:
+        olNameSubmitZoomSel->update(secs);
+        olNameBackZoomSel->update(secs);
+
     default:
         break;
     }
@@ -495,6 +553,10 @@ void MainMenu::updateMousePosForState(State menuState, const raylib::Vector2 &po
         settingsBackZoomSel->onMousePosUpdate(pos);
         resolutionBoxSel->onMousePosUpdate(pos);
         break;
+
+    case State::SHOW_ONLINE_NAME_INPUT:
+        olNameSubmitZoomSel->onMousePosUpdate(pos);
+        olNameBackZoomSel->onMousePosUpdate(pos);
 
     default:
         break;
@@ -522,6 +584,12 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
         settingsApplyZoomSel->render(renderer);
         settingsBackZoomSel->render(renderer);
         break;
+
+    case State::SHOW_ONLINE_NAME_INPUT:
+        renderer->drawTexture(textLabelTexture, TL_ENTER_A_NAME, olNameTLPromptDst,
+                olNameTLOpacity);
+        olNameSubmitZoomSel->render(renderer);
+        olNameBackZoomSel->render(renderer);
     
     default:
         break;

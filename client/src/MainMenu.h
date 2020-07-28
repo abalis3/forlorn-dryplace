@@ -147,6 +147,7 @@ class MainMenu : public Scene {
         FADE_TRANSITION,
         SHOW_TOPLEVEL,
         SHOW_SETTINGS,
+        SHOW_ONLINE_NAME_INPUT,
     };
 
     /* Stores the current State being shown by the menu */
@@ -181,6 +182,18 @@ class MainMenu : public Scene {
 
     /* BoxSelector for resolution option on settings menu */
     BoxSelector *resolutionBoxSel;
+
+    /* Zoom selector for online name-input screen "Submit" button */
+    ZoomSelector *olNameSubmitZoomSel;
+
+    /* Zoom selector for online name-input screen "Back" button */
+    ZoomSelector *olNameBackZoomSel;
+
+    /* Rectangle defining where on screen the name-input "Enter a name" text label should render */
+    raylib::Rectangle olNameTLPromptDst;
+
+    /* Opacity variable for current opacity of text labels on the online name-input submenu */
+    float olNameTLOpacity;
 
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);
