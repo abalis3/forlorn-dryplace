@@ -49,7 +49,7 @@ class MenuTextBox : public OpacityDependent {
     raylib::Rectangle dstRect;
 
     /* The buffer holding the current number of characters in the text box */
-    char *content[];
+    char *content;
 
     /* The number of characters (not including \0 terminator) in the text input currently */
     int numChars;
