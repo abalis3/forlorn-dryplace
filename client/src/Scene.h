@@ -54,6 +54,12 @@ class Scene {
             const raylib::Vector2 &pos) {}
 
     /*
+     * To be called by the window when a keyboard button has been pressed to notify
+     * the the focused scene so it can handle it
+     */
+    virtual void onKeyPressed(int key) {}
+
+    /*
      * To be called by the window when the scene is first shown
      * and whenever the window gets resized, to ensure the scene
      * adjusts its size accordingly

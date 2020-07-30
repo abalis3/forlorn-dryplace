@@ -55,6 +55,7 @@ static const float OL_NAME_ZS_BOT_POS = 0.9;
 static const float OL_NAME_ZS_DIST_FROM_CTR_HEIGHT_PCT = 1.2;      // relative to height of ZS
 static const float OL_NAME_PROMPT_TL_HEIGHT_PCT = 0.05;
 static const float OL_NAME_PROMPT_TL_TOP_POS = 0.45;
+static const int OL_NAME_TB_MAX_CHARS = 25;
 
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -150,6 +151,12 @@ MainMenu::MainMenu(Window &window)
     olNameBackZoomSel->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
     olNameBackZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     olNameBackZoomSel->setDependentOpacity(0);
+
+    /* Initialize online name input submenu textbox */
+    olNameTextBox = new MenuTextBox(OL_NAME_TB_MAX_CHARS);
+    olNameTextBox->setSize(500, 100);
+    olNameTextBox->setX(700);
+    olNameTextBox->setY(600);
 }
 
 MainMenu::~MainMenu()
@@ -164,6 +171,7 @@ MainMenu::~MainMenu()
     delete settingsApplyZoomSel;
     delete settingsBackZoomSel;
     delete resolutionBoxSel;
+    delete olNameTextBox;
     delete olNameSubmitZoomSel;
     delete olNameBackZoomSel;
 }
@@ -418,6 +426,17 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
     }
 }
 
+void MainMenu::onKeyPressed(int key)
+{
+    switch(currentState) {
+    case State::SHOW_ONLINE_NAME_INPUT:
+        olNameTextBox->onKeyPressed(key);
+        break;
+    default:
+        break;
+    }
+}
+
 void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 {
     if (source == toplevelZoomSel) {
@@ -509,6 +528,7 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
 
     case State::SHOW_ONLINE_NAME_INPUT:
         olNameTLOpacity = opacity;
+        olNameTextBox->setDependentOpacity(opacity);
         olNameSubmitZoomSel->setDependentOpacity(opacity);
         olNameBackZoomSel->setDependentOpacity(opacity);
 
@@ -588,6 +608,7 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
     case State::SHOW_ONLINE_NAME_INPUT:
         renderer->drawTexture(textLabelTexture, TL_ENTER_A_NAME, olNameTLPromptDst,
                 olNameTLOpacity);
+        olNameTextBox->render(renderer);
         olNameSubmitZoomSel->render(renderer);
         olNameBackZoomSel->render(renderer);
     

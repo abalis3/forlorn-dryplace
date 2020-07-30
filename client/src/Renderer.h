@@ -52,6 +52,11 @@ class Renderer {
             float srcW, float srcH, float dstX, float dstY, float dstW,
             float dstH);
 
+    /* Draw the given texture with given opacity at the given src and dst params */
+    void drawTexture(raylib::Texture *tex, float srcX, float srcY,
+            float srcW, float srcH, float dstX, float dstY, float dstW,
+            float dstH, float opacity);
+
     /* Draw the entire given texture at dst params with given transparency */
     void drawTexture(raylib::Texture *tex, float dstX, float dstY, float dstW,
             float dstH, float opacity);

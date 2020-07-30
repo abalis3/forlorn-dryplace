@@ -8,6 +8,7 @@
 #include "ZoomSelector.h"
 #include "BoxSelector.h"
 #include "SelectableButton.h"
+#include "MenuTextBox.h"
 
 class MainMenu : public Scene {
  public:
@@ -50,6 +51,12 @@ class MainMenu : public Scene {
      * it to relevant sub-objects
      */
     void onMouseButtonPressed(int button, const raylib::Vector2 &pos) override;
+
+    /*
+     * Receives a notification that a key with given key code has been depressed
+     * so that it may be forwarded to relevant sub-objects
+     */
+    void onKeyPressed(int key) override;
 
     /* Called by the Game runner to see if the scene should keep running or transition */
     ReturnCode getReturnCode();
@@ -183,14 +190,17 @@ class MainMenu : public Scene {
     /* BoxSelector for resolution option on settings menu */
     BoxSelector *resolutionBoxSel;
 
+    /* Rectangle defining where on screen the name-input "Enter a name" text label should render */
+    raylib::Rectangle olNameTLPromptDst;
+
+    /* Text box to enter name within on online name-input screen */
+    MenuTextBox *olNameTextBox;
+
     /* Zoom selector for online name-input screen "Submit" button */
     ZoomSelector *olNameSubmitZoomSel;
 
     /* Zoom selector for online name-input screen "Back" button */
     ZoomSelector *olNameBackZoomSel;
-
-    /* Rectangle defining where on screen the name-input "Enter a name" text label should render */
-    raylib::Rectangle olNameTLPromptDst;
 
     /* Opacity variable for current opacity of text labels on the online name-input submenu */
     float olNameTLOpacity;

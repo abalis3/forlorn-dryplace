@@ -37,10 +37,19 @@ class MenuTextBox : public OpacityDependent {
     /* Set if this text box is currently enabled or not */
     void setEnabled(bool enabled);
 
+    /* Called by the main menu scene to notify the textbox of a relevant keypress event */
+    void onKeyPressed(int key);
+
     /* Render function to render to screen once per game loop */
     void render(Renderer *renderer);
 
  private:
+
+    /* The texture for the background rectangle */
+    raylib::Texture *bgRectTexture;
+
+    /* The font used to draw the content inside the text box */
+    raylib::Font *font;
 
     /*
      * The location on the screen that this text box occupes. This is where the
