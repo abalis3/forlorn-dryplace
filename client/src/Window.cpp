@@ -172,6 +172,9 @@ void Window::update(double secs)
         if (IsKeyPressed(KEY_BACKSPACE)) {
             currentScene->onKeyPressed(KEY_BACKSPACE);
         }
+        if (IsKeyPressed(KEY_ENTER)) {
+            currentScene->onKeyPressed(KEY_ENTER);
+        }
     }
 
     if (IsKeyPressed(KEY_F3)) {

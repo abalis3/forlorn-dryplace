@@ -22,6 +22,7 @@ ZoomSelector::ZoomSelector(const std::string &texturePath, float hoverZoomRatio)
     this->centerXPos = 0;
     this->centerYPos = 0;
     this->focusedIndex = -1;
+    this->enabled = true;
     this->animStopwatch = ANIMATION_DURATION;
     this->callback = nullptr;
     numItems = 0;
@@ -75,6 +76,11 @@ void ZoomSelector::addItem(const raylib::Rectangle &srcRect, float itemCenterY)
 void ZoomSelector::setCallback(std::function<void(ZoomSelector*, int)> cb)
 {
     callback = cb;
+}
+
+void ZoomSelector::setEnabled(bool enabled)
+{
+    this->enabled = enabled;
 }
 
 void ZoomSelector::recalculateSizeParams()
@@ -241,7 +247,7 @@ void ZoomSelector::onMousePosUpdate(const raylib::Vector2 &pos)
         hitbox.y = curItem->collisionY;
         hitbox.height = curItem->collisionH;
         
-        if (hitbox.CheckCollision(pos)) {
+        if (hitbox.CheckCollision(pos) && enabled) {
             /* For a found collision, zoom current and last item and set the expansionCenter */
             focusedIndex = curIndex;
             curItem->targetZoomPercent = 1.0;
@@ -273,7 +279,7 @@ void ZoomSelector::onMousePosUpdate(const raylib::Vector2 &pos)
 
 void ZoomSelector::onMousePressed()
 {
-    if (callback != nullptr && focusedIndex >= 0) {
+    if (enabled && callback != nullptr && focusedIndex >= 0) {
         callback(this, focusedIndex);
     }
 }
@@ -283,11 +289,18 @@ void ZoomSelector::render(Renderer *renderer)
     int curIndex = 0;
     ZoomSelectorItem *curItem = itemListHead;
 
+    Color renderColor;
+    if (enabled) {
+        renderColor = Color{255, 255, 255, (unsigned char)(getDependentOpacity()*255)};
+    } else {
+        renderColor = Color{200, 200, 200, (unsigned char)(getDependentOpacity()*255)};
+    }
+
     while (curItem != nullptr) {
 
 
         renderer->drawTexture(contentTexture, curItem->srcRect,
-                curItem->dstRect, getDependentOpacity());
+                curItem->dstRect, renderColor);
 
         if(curIndex++ == focusedIndex) {
 

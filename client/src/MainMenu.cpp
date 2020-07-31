@@ -55,7 +55,12 @@ static const float OL_NAME_ZS_BOT_POS = 0.9;
 static const float OL_NAME_ZS_DIST_FROM_CTR_HEIGHT_PCT = 1.2;      // relative to height of ZS
 static const float OL_NAME_PROMPT_TL_HEIGHT_PCT = 0.05;
 static const float OL_NAME_PROMPT_TL_TOP_POS = 0.45;
-static const int OL_NAME_TB_MAX_CHARS = 25;
+static const float OL_NAME_TB_TOP_POS = 0.55; /* Pct of screen height where tb top is */
+static const float OL_NAME_TB_WIDTH_PCT = 0.6; /* Pct of screen height = width of tb */
+static const float OL_NAME_TB_HEIGHT_PCT = 0.08; /* Pct of screen height = height of tb */
+static const int OL_NAME_TB_MAX_CHARS = 15;
+static const float OL_NAME_LS_VERT_POS = 0.70; /* Pct of screen height = y coord of ctr pt of ls */
+static const float OL_NAME_LS_SIZE_PCT = 0.08; /* Pct of screen height = size of ls */
 
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -152,11 +157,9 @@ MainMenu::MainMenu(Window &window)
     olNameBackZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     olNameBackZoomSel->setDependentOpacity(0);
 
-    /* Initialize online name input submenu textbox */
+    /* Initialize online name input submenu textbox and loading spinner */
     olNameTextBox = new MenuTextBox(OL_NAME_TB_MAX_CHARS);
-    olNameTextBox->setSize(500, 100);
-    olNameTextBox->setX(700);
-    olNameTextBox->setY(600);
+    olNameLoadSpinner = new LoadingSpinner();
 }
 
 MainMenu::~MainMenu()
@@ -344,12 +347,18 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     olNameBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
             zoomSelYPos, zoomSelItemPadding);
 
-    /* Update online name input text labels size params */
+    /* Update online name input text labels, loading spinner, and textbox size params */
     textLabelHeight = getHeight() * OL_NAME_PROMPT_TL_HEIGHT_PCT;
     olNameTLPromptDst.height = textLabelHeight;
     olNameTLPromptDst.y = getHeight() * OL_NAME_PROMPT_TL_TOP_POS;
     olNameTLPromptDst.width = (textLabelHeight / TL_ENTER_A_NAME.height) * TL_ENTER_A_NAME.width;
     olNameTLPromptDst.x = (getWidth() - olNameTLPromptDst.width) / 2;
+    olNameLoadSpinner->setSize(getHeight() * OL_NAME_LS_SIZE_PCT);
+    olNameLoadSpinner->setY(getHeight() * OL_NAME_LS_VERT_POS);
+    olNameLoadSpinner->setX(getWidth() / 2);
+    olNameTextBox->setSize(getHeight() * OL_NAME_TB_WIDTH_PCT, getHeight() * OL_NAME_TB_HEIGHT_PCT);
+    olNameTextBox->setX((getWidth() - olNameTextBox->getWidth()) / 2);
+    olNameTextBox->setY(getHeight() * OL_NAME_TB_TOP_POS);
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -430,7 +439,11 @@ void MainMenu::onKeyPressed(int key)
 {
     switch(currentState) {
     case State::SHOW_ONLINE_NAME_INPUT:
-        olNameTextBox->onKeyPressed(key);
+        if (key == KEY_ENTER) {
+            triggerNameSubmission();
+        } else {
+            olNameTextBox->onKeyPressed(key);
+        }
         break;
     default:
         break;
@@ -449,6 +462,9 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Play Online */
         case 1:
+            olNameLoading = false;
+            olNameTextBox->setEnabled(true);
+            olNameSubmitZoomSel->setEnabled(true);
             initiateFadeToState(State::SHOW_ONLINE_NAME_INPUT);
             break;
 
@@ -486,6 +502,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         initiateFadeToState(State::SHOW_TOPLEVEL);
     } else if (source == olNameSubmitZoomSel) {
         /* Handle click for "submit" on online name selection screen */
+        triggerNameSubmission();
     } else if (source == olNameBackZoomSel) {
         /* Handle click for "back" on online name selection screen */
         initiateFadeToState(State::SHOW_TOPLEVEL);
@@ -529,6 +546,7 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
     case State::SHOW_ONLINE_NAME_INPUT:
         olNameTLOpacity = opacity;
         olNameTextBox->setDependentOpacity(opacity);
+        olNameLoadSpinner->setDependentOpacity(opacity);
         olNameSubmitZoomSel->setDependentOpacity(opacity);
         olNameBackZoomSel->setDependentOpacity(opacity);
 
@@ -552,6 +570,7 @@ void MainMenu::updateForState(State menuState, double secs)
         break;
 
     case State::SHOW_ONLINE_NAME_INPUT:
+        olNameLoadSpinner->update(secs);
         olNameSubmitZoomSel->update(secs);
         olNameBackZoomSel->update(secs);
 
@@ -609,10 +628,23 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
         renderer->drawTexture(textLabelTexture, TL_ENTER_A_NAME, olNameTLPromptDst,
                 olNameTLOpacity);
         olNameTextBox->render(renderer);
+        if (olNameLoading) {
+            olNameLoadSpinner->render(renderer);
+        }
         olNameSubmitZoomSel->render(renderer);
         olNameBackZoomSel->render(renderer);
+        break;
     
     default:
         break;
+    }
+}
+
+void MainMenu::triggerNameSubmission()
+{
+    if (olNameTextBox->getContent() != "") {
+        olNameLoading = true;
+        olNameTextBox->setEnabled(false);
+        olNameSubmitZoomSel->setEnabled(false);
     }
 }

@@ -9,6 +9,7 @@
 #include "BoxSelector.h"
 #include "SelectableButton.h"
 #include "MenuTextBox.h"
+#include "LoadingSpinner.h"
 
 class MainMenu : public Scene {
  public:
@@ -196,6 +197,10 @@ class MainMenu : public Scene {
     /* Text box to enter name within on online name-input screen */
     MenuTextBox *olNameTextBox;
 
+    /* LoadingSpinner for online name-input screen. Boolean tracks if it's visible */
+    LoadingSpinner *olNameLoadSpinner;
+    bool olNameLoading;
+
     /* Zoom selector for online name-input screen "Submit" button */
     ZoomSelector *olNameSubmitZoomSel;
 
@@ -233,6 +238,9 @@ class MainMenu : public Scene {
 
     /* Renders all objects necessary for the given state (specifically submenu states) */
     void renderForState(State menuState, Renderer *renderer);
+
+    /* Initiates the sequence of validating the input online-name */
+    void triggerNameSubmission();
 };
 
 #endif

@@ -34,6 +34,9 @@ class MenuTextBox : public OpacityDependent {
     float getWidth();
     float getHeight();
 
+    /* Get the current string contained in the text box */
+    std::string getContent();
+
     /* Set if this text box is currently enabled or not */
     void setEnabled(bool enabled);
 
@@ -63,14 +66,21 @@ class MenuTextBox : public OpacityDependent {
     /* The number of characters (not including \0 terminator) in the text input currently */
     int numChars;
 
-    /* The font size to render with */
+    /* The current on-screen width that will be occupied by content with current textbox size */
+    raylib::Vector2 contentSize;
+
+    /* The font size / spacing parameters to render with */
     float fontSize;
+    float fontSpacing;
 
     /* The maximum number of characters this text box may hold */
     int maxChars;
 
     /* Is this text box currently enabled? */
     bool enabled;
+
+    /* Helper function to call to recalculate the size of the rendered text content */
+    void recalculateContentSize();
 };
 
 #endif

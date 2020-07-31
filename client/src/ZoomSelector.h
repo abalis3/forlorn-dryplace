@@ -53,6 +53,9 @@ class ZoomSelector : public OpacityDependent {
      */
     void setCallback(std::function<void(ZoomSelector*, int)> cb);
 
+    /* Set if the ZoomSelector is currently enabled or not */
+    void setEnabled(bool enabled);
+
     /* Update the ZoomSelector with elapsed time since last call */
     void update(double secs);
 
@@ -149,6 +152,9 @@ private:
 
     /* Index of the last item hovered in the ZoomSelector */
     int focusedIndex;
+
+    /* Records if this zoom selector is currently enabled */
+    bool enabled;
 
     /* Callback function that will be called when an item is clicked */
     std::function<void(ZoomSelector*, int)> callback;
