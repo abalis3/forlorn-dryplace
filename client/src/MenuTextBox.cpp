@@ -83,6 +83,10 @@ void MenuTextBox::setEnabled(bool enabled)
 
 void MenuTextBox::onKeyPressed(int key)
 {
+    if (!enabled) {
+        return;
+    }
+
     /* Handle presses of 0-9, A-Z, and Backspace */
     if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'Z')) {
         if (numChars < maxChars) {
@@ -90,7 +94,7 @@ void MenuTextBox::onKeyPressed(int key)
             content[numChars] = '\0';
         }
     } else if (key == KEY_BACKSPACE && numChars > 0) {
-        content[--numChars] = '\0';\
+        content[--numChars] = '\0';
     }
 
     recalculateContentSize();

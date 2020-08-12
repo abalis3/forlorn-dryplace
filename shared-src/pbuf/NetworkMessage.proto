@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pbuf;
+
+message NetworkMessage {
+
+    /* For connection health checking. Ping to request. Should be replied to by Pong */
+    enum ProbeType {
+        PING = 0;
+        PONG = 1;
+    }
+
+    oneof type {
+        ProbeType probetype = 1; /* No data - Just maintaining conn status */
+    }
+}
