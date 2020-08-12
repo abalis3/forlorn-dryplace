@@ -4,18 +4,26 @@
 /* Macros to define what OS we are building on */
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
    #define COMPILING_ON_WINDOWS 1
+   #define COMPILING_ON_OSX 0
+   #define COMPILING_ON_LINUX 0
 #elif __APPLE__
+   #define COMPILING_ON_WINDOWS 0
    #define COMPILING_ON_OSX 1
+   #define COMPILING_ON_LINUX 0
 #elif __linux__
+   #define COMPILING_ON_WINDOWS 0
+   #define COMPILING_ON_OSX 0
    #define COMPILING_ON_LINUX 1
 #endif
 
 #include <string>
+#include <stdexcept>
 
 #if COMPILING_ON_WINDOWS
     #include <winsock2.h>
 #else
     #include <sys/socket.h>
+    #include <functional>
 #endif
 
 /* 
@@ -45,6 +53,11 @@ class Connection {
 
  private:
 
+#if not(COMPILING_ON_WINDOWS)
+    /* Private constructor to be used by the Listener when it receives an incoming connection */
+    Connection(int sockfd);
+#endif
+
     /* The states this connection may be in */
     enum class State {
         DISCONNECTED,   /* No socket file descriptor - socket completely closed */
@@ -57,11 +70,59 @@ class Connection {
 
     /* Holds the socket handle - Platform specific */
 #if COMPILING_ON_WINDOWS
-    SOCKET sock;
+    SOCKET sockfd;
 #else
-    int sock;
+    int sockfd;
+#endif
+
+#if not(COMPILING_ON_WINDOWS)
+    /* We need listener as a friend to create Connections from socket descriptors */
+    friend class Listener;
 #endif
 
 };
+
+/*
+ * Class representing a TCP listener socket. It listens for incoming connections and
+ * notifies when a connection is accepted. The accepted "Connection" is passed as part of
+ * the notification callback so it can then be used in whatever way deemed fit by the
+ * initiator of the listener. ONLY IMPLEMENTED FOR NON-WINDOWS BUILDS.
+ */
+#if not(COMPILING_ON_WINDOWS)
+class Listener {
+ public:
+
+    /* 
+     * Constructor - calling this initiates the listener on the given port
+     * and starts accepting connections. The port is the port that should be listened on.
+     * The callback is a function to be called when new connections are accepted.
+     * It receives a pointer to the new Connection and becomes responsible for managing
+     * and freeing the connection when its use is complete.
+     */
+    Listener(uint16_t port, std::function<void(Connection*)> cb);
+    
+    /* Destructor - tear down any memory used by the Listener and close the socket */
+    ~Listener();
+
+    /* Poll method for the listener socket. This should be called regularly */
+    void poll();
+
+ private:
+
+    /* The file descriptor pointing to the main listening socket */
+    int sockfd;
+
+    /* Callback function that will be called when a new socket connection is received */
+    std::function<void(Connection*)> callback;
+
+};
+
+/* Empty exception type to throw when a listener fails */
+class ListenerException : public std::runtime_error {
+ public:
+    ListenerException(const char* message) : std::runtime_error(message) {}
+};
+
+#endif
 
 #endif
