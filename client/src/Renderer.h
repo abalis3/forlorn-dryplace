@@ -74,7 +74,7 @@ class Renderer {
             const raylib::Rectangle &dst, float opacity);
 
     /* Draw the texture from given src rect to given dst rect with given rotation about given origin */
-    void Renderer::drawTexture(raylib::Texture *tex, const raylib::Rectangle &src,
+    void drawTexture(raylib::Texture *tex, const raylib::Rectangle &src,
             const raylib::Rectangle &dst, raylib::Vector2 origin, float rotation, Color color);
 
     /* Draw the texture from given src rect to given dst rect with given color tint */
