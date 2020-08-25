@@ -26,6 +26,25 @@
     #include <functional>
 #endif
 
+/* Forward declaration to be used by ConnectionCallbacks */
+class Connection;
+
+/*
+ * Structs representing connection callback functions. These must be set to either valid
+ * function pointers or NULL if no callback is desired to listen for a specific event.
+ */
+struct ConnectionCallbacks {
+
+    /* Called when a connection successfully connects */
+    std::function<void(Connection*)> onConnectSuccess;
+
+    /* 
+     * Called when a connection has failed to connect.
+     * The caller should destroy the failed connection as it can no longer be used.
+     */
+    std::function<void(Connection*)> onConnectFail;
+};
+
 /* 
  * Class representing a TCP socket connection. Essentially an abstraction layer to provide
  * multi-platform basic socket functionality for use by both the server and client.
@@ -45,11 +64,19 @@ class Connection {
     /* Uninit/stop the socket subsystem - Only actually does anything on windows system */
     static void quit();
 
-    /* Constructor - Supply destination (peer) host/ip and port to connect to */
-    Connection(std::string host, uint16_t port);
+    /*
+     * Constructor - Supply destination (peer) host/ip and port to connect to.
+     * Also supply a timeout period. If timeout is reached before successful connection,
+     * it will be aborted and treated as a connection error. Except for on an immediate failure,
+     * the socket's connection status will be given by the callbacks onConnectSuccess/onConnectFail
+     */
+    Connection(std::string host, uint16_t port, double timeout, ConnectionCallbacks &callbacks);
 
     /* Destructor to clean up memory used */
     ~Connection();
+
+    /* Poll method for the connection. This should be called regularly with the time since last call */
+    void poll(double secs);
 
  private:
 
@@ -68,12 +95,21 @@ class Connection {
     /* Holds the current state of this connection */
     State currentState;
 
+    /* The callback functions registered for this Connection instance */
+    ConnectionCallbacks cbs;
+
     /* Holds the socket handle - Platform specific */
 #if COMPILING_ON_WINDOWS
     SOCKET sockfd;
 #else
     int sockfd;
 #endif
+
+    /* Used as a stopwatch, to count up when timing some aspect of a socket */
+    double timer;
+
+    /* The timeout period when opening a connection. If it takes longer, fail */
+    double openTimeout;
 
 #if not(COMPILING_ON_WINDOWS)
     /* We need listener as a friend to create Connections from socket descriptors */
@@ -115,6 +151,12 @@ class Listener {
     /* Callback function that will be called when a new socket connection is received */
     std::function<void(Connection*)> callback;
 
+};
+
+/* Empty exception type to throw when a connection fails */
+class ConnectionException : public std::runtime_error {
+ public:
+    ConnectionException(const char* message) : std::runtime_error(message) {}
 };
 
 /* Empty exception type to throw when a listener fails */

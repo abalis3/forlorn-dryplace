@@ -2,27 +2,34 @@
 #include <unistd.h>
 #include <iostream>
 
-#define PORT 44444 
-
-using namespace std;
-
-int conns = 0;
+#define PORT 44444
 
 static void onConnAccept(Connection *conn)
 {
     std::cout << "Connection Received" << std::endl;
-    conns++;
-    delete conn;
+    //delete conn;
 }
 
 int main()
 {
-    Listener *l = new Listener(PORT, onConnAccept);
+    Listener *listener;
+    bool running = true;
 
-    while (conns < 5) {
-        l->poll();
+    /* Start listenening for incoming connections to the server */
+    try {
+        listener = new Listener(PORT, onConnAccept);
+    } catch (ListenerException &exp) {
+        std::cout << "Failed to create listener on port " << PORT << std::endl;
+        return 1;
     }
 
-    delete l;
+    std::cout << "Listening on port " << PORT << std::endl;
+    
+    while (running) {
+        listener->poll();
+    }
+
+    std::cout << "Stopping listener and destroying server" << std::endl;
+    delete listener;
     return 0; 
 }

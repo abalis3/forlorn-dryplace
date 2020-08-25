@@ -1,6 +1,7 @@
 #include "MainMenu.h"
 
 #include "Util.h"
+#include <iostream>
 
 /* Filepaths for external resources */
 static const char BACKGROUND_IMG_PATH[] = "MainMenu/desert-background.png";
@@ -61,6 +62,7 @@ static const float OL_NAME_TB_HEIGHT_PCT = 0.08; /* Pct of screen height = heigh
 static const int OL_NAME_TB_MAX_CHARS = 15;
 static const float OL_NAME_LS_VERT_POS = 0.70; /* Pct of screen height = y coord of ctr pt of ls */
 static const float OL_NAME_LS_SIZE_PCT = 0.08; /* Pct of screen height = size of ls */
+static const float OL_NAME_SUBMIT_MIN_LOAD_TIME = 1.0;
 
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -95,6 +97,9 @@ MainMenu::MainMenu(Window &window)
     fadeStopwatch = 0;
     currentState = State::INITIAL_FADE;
     nextReturnCode = ReturnCode::KEEP_RUNNING;
+    connection = nullptr;
+    shouldSucceedNameSubmit = false;
+    shouldFailNameSubmit = false;
 
     /* Load textures for background and main title text and text labels */
     bgTexture = new raylib::Texture(Util::formResourcePath(BACKGROUND_IMG_PATH));
@@ -177,6 +182,7 @@ MainMenu::~MainMenu()
     delete olNameTextBox;
     delete olNameSubmitZoomSel;
     delete olNameBackZoomSel;
+    delete connection;
 }
 
 void MainMenu::update(double secs)
@@ -574,6 +580,27 @@ void MainMenu::updateForState(State menuState, double secs)
         olNameSubmitZoomSel->update(secs);
         olNameBackZoomSel->update(secs);
 
+        if (connection != nullptr) {
+            connection->poll(secs);
+        }
+
+        if (olNameLoading){
+            nameSubmitStopwatch += secs;
+        }
+
+        /* Name submit done but need to display loading wheel for min time */
+        if (shouldSucceedNameSubmit || shouldFailNameSubmit) {
+            if (nameSubmitStopwatch >= OL_NAME_SUBMIT_MIN_LOAD_TIME) {
+                if (shouldSucceedNameSubmit) {
+                    handleNameSubmissionSuccess();
+                    shouldSucceedNameSubmit = false;
+                } else {
+                    handleNameSubmissionFail();
+                    shouldFailNameSubmit = false;
+                }
+            }
+        }
+
     default:
         break;
     }
@@ -640,11 +667,47 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
     }
 }
 
+void MainMenu::onConnectSuccess(Connection *conn) {
+    shouldSucceedNameSubmit = true;
+}
+
+void MainMenu::onConnectFail(Connection *conn) {
+    if (connection != nullptr) {
+        delete connection;
+        connection = nullptr;
+    }
+    shouldFailNameSubmit = true;
+}
+
 void MainMenu::triggerNameSubmission()
 {
     if (olNameTextBox->getContent() != "") {
         olNameLoading = true;
         olNameTextBox->setEnabled(false);
         olNameSubmitZoomSel->setEnabled(false);
+
+        ConnectionCallbacks cbs;
+        cbs.onConnectSuccess = std::bind(&MainMenu::onConnectSuccess, this, _1);
+        cbs.onConnectFail = std::bind(&MainMenu::onConnectFail, this, _1);
+        
+        nameSubmitStopwatch = 0;
+
+        try {
+            connection = new Connection("127.0.0.1", 44444, 10, cbs);
+        } catch (ConnectionException &exc) {
+            onConnectFail(nullptr);
+        }
     }
+}
+
+void MainMenu::handleNameSubmissionSuccess()
+{
+    initiateFadeToState(State::SHOW_TOPLEVEL);
+}
+
+void MainMenu::handleNameSubmissionFail()
+{
+    olNameLoading = false;
+    olNameTextBox->setEnabled(true);
+    olNameSubmitZoomSel->setEnabled(true);
 }

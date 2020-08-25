@@ -10,6 +10,7 @@
 #include "SelectableButton.h"
 #include "MenuTextBox.h"
 #include "LoadingSpinner.h"
+#include "Connection.h"
 
 class MainMenu : public Scene {
  public:
@@ -210,6 +211,20 @@ class MainMenu : public Scene {
     /* Opacity variable for current opacity of text labels on the online name-input submenu */
     float olNameTLOpacity;
 
+    /* Connection instance to the online server */
+    Connection *connection;
+
+    /* Callback functions to be used by the connection to the online server */
+    void onConnectFail(Connection *conn);
+    void onConnectSuccess(Connection *conn);
+
+    /* Booleans to track queued name success/fail after loading wheel spin */
+    bool shouldSucceedNameSubmit;
+    bool shouldFailNameSubmit;
+
+    /* Stopwatch to count how long loading wheel has been spinning */
+    float nameSubmitStopwatch;
+
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);
 
@@ -241,6 +256,13 @@ class MainMenu : public Scene {
 
     /* Initiates the sequence of validating the input online-name */
     void triggerNameSubmission();
+
+    /* Triggered when name submission is complete and success (and loading wheel has spun minimum) */
+    void handleNameSubmissionSuccess();
+
+    /* Triggered when name submission is complete and fail (and loading wheel has spun maximum) */
+    void handleNameSubmissionFail();
+
 };
 
 #endif
