@@ -97,9 +97,12 @@ MainMenu::MainMenu(Window &window)
     fadeStopwatch = 0;
     currentState = State::INITIAL_FADE;
     nextReturnCode = ReturnCode::KEEP_RUNNING;
-    connection = nullptr;
     shouldSucceedNameSubmit = false;
     shouldFailNameSubmit = false;
+
+    /* Create the ServerSession for use with online communication */
+    session = new ServerSession();
+    session->registerCallback(std::bind(&MainMenu::onSessionEvent, this, _1));
 
     /* Load textures for background and main title text and text labels */
     bgTexture = new raylib::Texture(Util::formResourcePath(BACKGROUND_IMG_PATH));
@@ -182,7 +185,7 @@ MainMenu::~MainMenu()
     delete olNameTextBox;
     delete olNameSubmitZoomSel;
     delete olNameBackZoomSel;
-    delete connection;
+    delete session;
 }
 
 void MainMenu::update(double secs)
@@ -212,6 +215,9 @@ void MainMenu::update(double secs)
         bgSrcXPosIncreasing = true;
     }
     bgSrcXPos = bgSrcXMax * bgSrcXPercent;
+
+    /* Poll online session */
+    session->poll(secs);
 
     switch (currentState) {
 
@@ -580,10 +586,6 @@ void MainMenu::updateForState(State menuState, double secs)
         olNameSubmitZoomSel->update(secs);
         olNameBackZoomSel->update(secs);
 
-        if (connection != nullptr) {
-            connection->poll(secs);
-        }
-
         if (olNameLoading){
             nameSubmitStopwatch += secs;
         }
@@ -667,16 +669,19 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
     }
 }
 
-void MainMenu::onConnectSuccess(Connection *conn) {
-    shouldSucceedNameSubmit = true;
-}
+void MainMenu::onSessionEvent(ServerSession::Event event)
+{
+    switch (event) {
 
-void MainMenu::onConnectFail(Connection *conn) {
-    if (connection != nullptr) {
-        delete connection;
-        connection = nullptr;
+    case ServerSession::Event::CONNECTION_LOST:
+        shouldFailNameSubmit = true;
+        break;
+
+    case ServerSession::Event::NAME_ACCEPTED:
+        shouldSucceedNameSubmit = true;
+        break;
+    
     }
-    shouldFailNameSubmit = true;
 }
 
 void MainMenu::triggerNameSubmission()
@@ -685,18 +690,8 @@ void MainMenu::triggerNameSubmission()
         olNameLoading = true;
         olNameTextBox->setEnabled(false);
         olNameSubmitZoomSel->setEnabled(false);
-
-        ConnectionCallbacks cbs;
-        cbs.onConnectSuccess = std::bind(&MainMenu::onConnectSuccess, this, _1);
-        cbs.onConnectFail = std::bind(&MainMenu::onConnectFail, this, _1);
-        
         nameSubmitStopwatch = 0;
-
-        try {
-            connection = new Connection("127.0.0.1", 44444, 10, cbs);
-        } catch (ConnectionException &exc) {
-            onConnectFail(nullptr);
-        }
+        session->open(olNameTextBox->getContent());
     }
 }
 

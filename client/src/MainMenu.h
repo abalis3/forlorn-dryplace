@@ -10,7 +10,7 @@
 #include "SelectableButton.h"
 #include "MenuTextBox.h"
 #include "LoadingSpinner.h"
-#include "Connection.h"
+#include "ServerSession.h"
 
 class MainMenu : public Scene {
  public:
@@ -211,12 +211,11 @@ class MainMenu : public Scene {
     /* Opacity variable for current opacity of text labels on the online name-input submenu */
     float olNameTLOpacity;
 
-    /* Connection instance to the online server */
-    Connection *connection;
+    /* Online Session instance */
+    ServerSession *session;
 
-    /* Callback functions to be used by the connection to the online server */
-    void onConnectFail(Connection *conn);
-    void onConnectSuccess(Connection *conn);
+    /* Callback functions to be used by the server session to notify of events */
+    void onSessionEvent(ServerSession::Event event);
 
     /* Booleans to track queued name success/fail after loading wheel spin */
     bool shouldSucceedNameSubmit;
