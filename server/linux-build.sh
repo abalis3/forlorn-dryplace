@@ -1,1 +1,1 @@
-docker build --tag abalis3/forbidden-desert-server:local .
+docker build --tag abalis3/forbidden-desert-server:local -f Dockerfile ..
