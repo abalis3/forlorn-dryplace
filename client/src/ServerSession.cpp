@@ -1,4 +1,5 @@
 #include "ServerSession.h"
+#include "pbuf/generated/NetworkMessage.pb.h"
 
 /* For std::bind _1, _2 ... */
 using namespace std::placeholders;
@@ -7,6 +8,7 @@ ServerSession::ServerSession()
 {
     connection = nullptr;
     callback = nullptr;
+    retryNameRequest = false;
 }
 
 ServerSession::~ServerSession()
@@ -33,11 +35,15 @@ void ServerSession::open(std::string name)
 
         try {
             connection = new Connection("127.0.0.1", 44444, 10, cbs);
+            this->name = name;
         } catch (ConnectionException &exc) {
             if (callback != nullptr) {
                 callback(Event::CONNECTION_LOST);
             }
         }
+    } else {
+        this->name = name;
+        sendNameRequest();
     }
 }
 
@@ -45,6 +51,22 @@ void ServerSession::poll(double secs)
 {
     if (connection != nullptr) {
         connection->poll(secs);
+
+        if (retryNameRequest) {
+            retryNameRequest = false;
+            sendNameRequest();
+        }
+    }
+}
+
+void ServerSession::sendNameRequest()
+{
+    pbuf::NetworkMessage msg;
+    msg.set_namerequest(name);
+    try {
+        connection->sendNetworkMessage(msg);
+    } catch (ConnectionException &exception) {
+        retryNameRequest = true;
     }
 }
 
@@ -56,7 +78,7 @@ void ServerSession::onConnectSuccess(Connection *conn)
     }
 
     if (callback != nullptr) {
-        callback(Event::NAME_ACCEPTED);
+        sendNameRequest();
     }
 }
 

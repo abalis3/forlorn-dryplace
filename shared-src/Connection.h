@@ -19,12 +19,16 @@
 #include <string>
 #include <stdexcept>
 
+#include "pbuf/generated/NetworkMessage.pb.h"
+
 #if COMPILING_ON_WINDOWS
     #include <winsock2.h>
 #else
     #include <sys/socket.h>
     #include <functional>
 #endif
+
+#define RECV_BUFFER_SIZE 4096
 
 /* Forward declaration to be used by ConnectionCallbacks */
 class Connection;
@@ -43,6 +47,9 @@ struct ConnectionCallbacks {
      * The caller should destroy the failed connection as it can no longer be used.
      */
     std::function<void(Connection*)> onConnectFail;
+
+    /* Called when the connection is lost completely after being opened successfully */
+    std::function<void(Connection*)> onConnectionLost;
 };
 
 /* 
@@ -74,6 +81,9 @@ class Connection {
 
     /* Destructor to clean up memory used */
     ~Connection();
+
+    /* Send the given network message protobuf over the connection stream */
+    void sendNetworkMessage(pbuf::NetworkMessage &msg);
 
     /* Poll method for the connection. This should be called regularly with the time since last call */
     void poll(double secs);
@@ -110,6 +120,13 @@ class Connection {
 
     /* The timeout period when opening a connection. If it takes longer, fail */
     double openTimeout;
+
+    /* The buffer into which received data will be read before decoding it */
+    char recvBuffer[RECV_BUFFER_SIZE];
+    int recvBufferPos;
+
+    /* The network message struct to parse into when receiving data */
+    pbuf::NetworkMessage recvMsg;
 
 #if not(COMPILING_ON_WINDOWS)
     /* We need listener as a friend to create Connections from socket descriptors */

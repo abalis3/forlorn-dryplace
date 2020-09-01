@@ -203,7 +203,12 @@ class MainMenu : public Scene {
     bool olNameLoading;
 
     /* Rectangle for destination on screen of 'name already taken' text label */
+    bool olNameShowTakenErr; /* Should the 'taken' error be visible? */
     raylib::Rectangle olNameTLTakenDst;
+
+    /* Rectangle for destination on screen of 'failed to connect' text label */
+    bool olNameShowConnectErr; /* Should the 'connect failed' error be visible? */
+    raylib::Rectangle olNameTLConnectFailed;
 
     /* Zoom selector for online name-input screen "Submit" button */
     ZoomSelector *olNameSubmitZoomSel;
@@ -219,10 +224,6 @@ class MainMenu : public Scene {
 
     /* Callback functions to be used by the server session to notify of events */
     void onSessionEvent(ServerSession::Event event);
-
-    /* Booleans to track queued name success/fail after loading wheel spin */
-    bool shouldSucceedNameSubmit;
-    bool shouldFailNameSubmit;
 
     /* Stopwatch to count how long loading wheel has been spinning */
     float nameSubmitStopwatch;
@@ -259,8 +260,17 @@ class MainMenu : public Scene {
     /* Initiates the sequence of validating the input online-name */
     void triggerNameSubmission();
 
-    /* Triggered when name submission is complete and success (and loading wheel has spun minimum) */
-    void handleNameSubmissionSuccess();
+    /* 
+     * Holds the currently queued name submission result for while the loading wheel is
+     * still spinning. Holds Event::NONE if no event queued.
+     */
+    ServerSession::Event olNameSubmitResult;
+
+    /* 
+     * Triggered when name submission is complete (and loading wheel has spun minimum).
+     * This function takes the next visual step (displaying error, moving to next screen, etc.)
+     */
+    void handleNameSubmissionResult();
 
     /* Triggered when name submission is complete and fail (and loading wheel has spun maximum) */
     void handleNameSubmissionFail();

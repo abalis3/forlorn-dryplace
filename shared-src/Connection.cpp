@@ -76,6 +76,7 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
     openTimeout = timeout;
     cbs = callbacks;
     timer = 0;
+    recvBufferPos = 0;
 }
 
 Connection::~Connection()
@@ -89,6 +90,53 @@ Connection::Connection(int sockfd)
 {
     currentState = State::ACTIVE;
     this->sockfd = sockfd;
+    recvBufferPos = 0;
+}
+
+void Connection::sendNetworkMessage(pbuf::NetworkMessage &msg)
+{
+    ssize_t res;
+
+    if (currentState == State::DISCONNECTED) {
+        throw ConnectionException("Cannot send data over closed connection");
+    }
+
+    std::string serialized = msg.SerializeAsString();
+    if (serialized.empty()) {
+        throw ConnectionException("Error forming name request message");
+    }
+
+    uint32_t serializedLen = htonl(serialized.length());
+
+    res = send(sockfd, &serializedLen, 4, 0);
+    if (res != 4) {
+        /* 
+         * Lost conn or full buffer. In either case, fail outright for now.
+         * In the future, consider handling full buffer case if it ever actually happens
+         */
+        close(sockfd);
+        sockfd = -1;
+        currentState = State::DISCONNECTED;
+        if (cbs.onConnectionLost != nullptr) {
+            cbs.onConnectionLost(this);
+        }
+        return;
+    }
+
+    res = send(sockfd, serialized.c_str(), serialized.length(), 0);
+    if (res != serialized.length()) {
+        /* 
+         * Lost conn or full buffer. In either case, fail outright for now.
+         * In the future, consider handling full buffer case if it ever actually happens
+         */
+        close(sockfd);
+        sockfd = -1;
+        currentState = State::DISCONNECTED;
+        if (cbs.onConnectionLost != nullptr) {
+            cbs.onConnectionLost(this);
+        }
+        return;
+    }
 }
 
 void Connection::poll(double secs)
@@ -147,6 +195,28 @@ void Connection::poll(double secs)
             return;
         }
 
+    } else if (sockfd >= 0) {
+        /* We have an active / suspended connection. Try receiving */
+        ssize_t res = recv(sockfd, &recvBuffer[recvBufferPos], RECV_BUFFER_SIZE - recvBufferPos, 0);
+        if (res == 0 || (res == -1 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+            /* Uh oh - a real error and not just nonblocking flagging (or graceful shutdown) */
+            close(sockfd);
+            sockfd = -1;
+            currentState = State::DISCONNECTED;
+            if (cbs.onConnectionLost != nullptr) {
+                cbs.onConnectionLost(this);
+            }
+            return;
+        } else if (res > 0) {
+            /* We got data! */
+            recvBufferPos += res;
+            if (recvBufferPos >= 4) {
+                uint32_t msgSize = ntohl(*((uint32_t*) &recvBuffer[0]));
+                if (recvBufferPos >= 4 + msgSize) {
+                    bool successfulParse = recvMsg.ParseFromArray(&recvBuffer[4], msgSize);
+                }
+            }
+        }
     }
 }
 

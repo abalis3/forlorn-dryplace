@@ -63,6 +63,8 @@ static const int OL_NAME_TB_MAX_CHARS = 15;
 static const float OL_NAME_LS_VERT_POS = 0.70; /* Pct of screen height = y coord of ctr pt of ls */
 static const float OL_NAME_LS_SIZE_PCT = 0.08; /* Pct of screen height = size of ls */
 static const float OL_NAME_SUBMIT_MIN_LOAD_TIME = 1.0;
+static const float OL_NAME_TB_ERROR_TL_HEIGHT_PCT = 0.04; /* Pct of screen ht = height of tl */
+static const float OL_NAME_TB_ERROR_TL_TOP_POS = 0.68; /* Pct of screen ht = y coord of top of tl */
 
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -99,8 +101,9 @@ MainMenu::MainMenu(Window &window)
     fadeStopwatch = 0;
     currentState = State::INITIAL_FADE;
     nextReturnCode = ReturnCode::KEEP_RUNNING;
-    shouldSucceedNameSubmit = false;
-    shouldFailNameSubmit = false;
+    olNameSubmitResult = ServerSession::Event::NONE;
+    olNameShowConnectErr = false;
+    olNameShowTakenErr = false;
 
     /* Create the ServerSession for use with online communication */
     session = new ServerSession();
@@ -367,10 +370,15 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     olNameTLPromptDst.y = getHeight() * OL_NAME_PROMPT_TL_TOP_POS;
     olNameTLPromptDst.width = (textLabelHeight / TL_ENTER_A_NAME.height) * TL_ENTER_A_NAME.width;
     olNameTLPromptDst.x = (getWidth() - olNameTLPromptDst.width) / 2;
-    olNameTLTakenDst.height = textLabelHeight*0.6;
-    olNameTLTakenDst.y = getHeight()*0.68;
-    olNameTLTakenDst.width = ((textLabelHeight*0.6) / TL_NAME_TAKEN.height) * TL_NAME_TAKEN.width;
+    textLabelHeight = getHeight() * OL_NAME_TB_ERROR_TL_HEIGHT_PCT;
+    olNameTLTakenDst.height = textLabelHeight;
+    olNameTLTakenDst.y = getHeight() * OL_NAME_TB_ERROR_TL_TOP_POS;
+    olNameTLTakenDst.width = (textLabelHeight / TL_NAME_TAKEN.height) * TL_NAME_TAKEN.width;
     olNameTLTakenDst.x = (getWidth() - olNameTLTakenDst.width) / 2;
+    olNameTLConnectFailed.height = textLabelHeight;
+    olNameTLConnectFailed.y = getHeight() * OL_NAME_TB_ERROR_TL_TOP_POS;
+    olNameTLConnectFailed.width = (textLabelHeight / TL_CONNECT_FAILED.height) * TL_CONNECT_FAILED.width;
+    olNameTLConnectFailed.x = (getWidth() - olNameTLConnectFailed.width) / 2;
     olNameLoadSpinner->setSize(getHeight() * OL_NAME_LS_SIZE_PCT);
     olNameLoadSpinner->setY(getHeight() * OL_NAME_LS_VERT_POS);
     olNameLoadSpinner->setX(getWidth() / 2);
@@ -538,6 +546,17 @@ void MainMenu::onSelectableButtonSelected(SelectableButton *source)
 
 void MainMenu::initiateFadeToState(State nextState)
 {
+    /* Opportunity to add init/reset functionality before a state is shown */
+    switch (nextState) {
+    case State::SHOW_ONLINE_NAME_INPUT:
+        olNameShowTakenErr = false;
+        olNameShowConnectErr = false;
+        break;
+
+    default:
+        break;
+    }
+
     fadeStopwatch = 0;
     fadeFromState = currentState;
     fadeToState = nextState;
@@ -597,15 +616,10 @@ void MainMenu::updateForState(State menuState, double secs)
         }
 
         /* Name submit done but need to display loading wheel for min time */
-        if (shouldSucceedNameSubmit || shouldFailNameSubmit) {
+        if (olNameSubmitResult != ServerSession::Event::NONE) {
             if (nameSubmitStopwatch >= OL_NAME_SUBMIT_MIN_LOAD_TIME) {
-                if (shouldSucceedNameSubmit) {
-                    handleNameSubmissionSuccess();
-                    shouldSucceedNameSubmit = false;
-                } else {
-                    handleNameSubmissionFail();
-                    shouldFailNameSubmit = false;
-                }
+                handleNameSubmissionResult();
+                olNameSubmitResult = ServerSession::Event::NONE;
             }
         }
 
@@ -668,8 +682,13 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
         }
         olNameSubmitZoomSel->render(renderer);
         olNameBackZoomSel->render(renderer);
-        renderer->drawTexture(textLabelTexture, TL_NAME_TAKEN, olNameTLTakenDst,
-                olNameTLOpacity);
+        if (olNameShowConnectErr) {
+            renderer->drawTexture(textLabelTexture, TL_CONNECT_FAILED, olNameTLConnectFailed,
+                    olNameTLOpacity);
+        } else if (olNameShowTakenErr) {
+            renderer->drawTexture(textLabelTexture, TL_NAME_TAKEN, olNameTLTakenDst,
+                    olNameTLOpacity);
+        }
         break;
     
     default:
@@ -680,15 +699,13 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
 void MainMenu::onSessionEvent(ServerSession::Event event)
 {
     switch (event) {
-
     case ServerSession::Event::CONNECTION_LOST:
-        shouldFailNameSubmit = true;
+    case ServerSession::Event::NAME_ACCEPTED:
+        olNameSubmitResult = event;
         break;
 
-    case ServerSession::Event::NAME_ACCEPTED:
-        shouldSucceedNameSubmit = true;
+    default:
         break;
-    
     }
 }
 
@@ -698,19 +715,35 @@ void MainMenu::triggerNameSubmission()
         olNameLoading = true;
         olNameTextBox->setEnabled(false);
         olNameSubmitZoomSel->setEnabled(false);
+        olNameShowConnectErr = false;
+        olNameShowTakenErr = false;
         nameSubmitStopwatch = 0;
         session->open(olNameTextBox->getContent());
     }
 }
 
-void MainMenu::handleNameSubmissionSuccess()
+void MainMenu::handleNameSubmissionResult()
 {
-    initiateFadeToState(State::SHOW_TOPLEVEL);
-}
+    switch(olNameSubmitResult) {
+    case ServerSession::Event::CONNECTION_LOST:
+        olNameLoading = false;
+        olNameTextBox->setEnabled(true);
+        olNameSubmitZoomSel->setEnabled(true);
+        olNameShowConnectErr = true;
+        break;
+    
+    case ServerSession::Event::NAME_REJECTED:
+        olNameLoading = false;
+        olNameTextBox->setEnabled(true);
+        olNameSubmitZoomSel->setEnabled(true);
+        olNameShowTakenErr = true;
+        break;
 
-void MainMenu::handleNameSubmissionFail()
-{
-    olNameLoading = false;
-    olNameTextBox->setEnabled(true);
-    olNameSubmitZoomSel->setEnabled(true);
+    case ServerSession::Event::NAME_ACCEPTED:
+        initiateFadeToState(State::SHOW_TOPLEVEL);
+        break;
+
+    default:
+        break;
+    }
 }

@@ -24,8 +24,10 @@ class ServerSession {
     ~ServerSession();
 
     enum class Event {
+        NONE,
         CONNECTION_LOST,
         NAME_ACCEPTED,
+        NAME_REJECTED,
     };
 
     /* Register a callback function to be notified of events for this ServerSession */
@@ -44,6 +46,18 @@ class ServerSession {
 
     /* Holds the callback function that will be called on notable events */
     std::function<void(Event)> callback;
+
+    /* Holds the name registered (or being registered) for this ServerSession */
+    std::string name;
+
+    /* Set to true if the name request fails so we can keep retrying */
+    bool retryNameRequest;
+
+    /* Sends a name request protobuf message over the connection containing the name class member */
+    void sendNameRequest();
+
+    /* Transmits a network message protobuf over the wire to the server */
+    void sendNetworkMessage(pbuf::NetworkMessage &msg);
 
     /* 
      * Callback functions that will be registered with the connection to be notified
