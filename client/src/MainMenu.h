@@ -201,6 +201,9 @@ class MainMenu : public Scene {
     LoadingSpinner *olNameLoadSpinner;
     bool olNameLoading;
 
+    /* Rectangle for destination on screen of 'name already taken' text label */
+    raylib::Rectangle olNameTLTakenDst;
+
     /* Zoom selector for online name-input screen "Submit" button */
     ZoomSelector *olNameSubmitZoomSel;
 

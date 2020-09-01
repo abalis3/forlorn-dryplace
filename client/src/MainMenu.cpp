@@ -82,6 +82,8 @@ static const raylib::Rectangle SB_FULLSCREEN_SELECTED(788, 192, 832, 192);
 static const raylib::Rectangle TL_WINDOW_MODE(0, 0, 772, 137);
 static const raylib::Rectangle TL_RESOLUTION(0, 137, 608, 137);
 static const raylib::Rectangle TL_ENTER_A_NAME(0, 274, 790, 137);
+static const raylib::Rectangle TL_NAME_TAKEN(0, 411, 618, 75);
+static const raylib::Rectangle TL_CONNECT_FAILED(0, 490, 833, 75);
 
 /* For std::bind _1, _2 ... */
 using namespace std::placeholders;
@@ -353,6 +355,10 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     olNameTLPromptDst.y = getHeight() * OL_NAME_PROMPT_TL_TOP_POS;
     olNameTLPromptDst.width = (textLabelHeight / TL_ENTER_A_NAME.height) * TL_ENTER_A_NAME.width;
     olNameTLPromptDst.x = (getWidth() - olNameTLPromptDst.width) / 2;
+    olNameTLTakenDst.height = textLabelHeight*0.6;
+    olNameTLTakenDst.y = getHeight()*0.68;
+    olNameTLTakenDst.width = ((textLabelHeight*0.6) / TL_NAME_TAKEN.height) * TL_NAME_TAKEN.width;
+    olNameTLTakenDst.x = (getWidth() - olNameTLTakenDst.width) / 2;
     olNameLoadSpinner->setSize(getHeight() * OL_NAME_LS_SIZE_PCT);
     olNameLoadSpinner->setY(getHeight() * OL_NAME_LS_VERT_POS);
     olNameLoadSpinner->setX(getWidth() / 2);
@@ -633,6 +639,8 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
         }
         olNameSubmitZoomSel->render(renderer);
         olNameBackZoomSel->render(renderer);
+        renderer->drawTexture(textLabelTexture, TL_NAME_TAKEN, olNameTLTakenDst,
+                olNameTLOpacity);
         break;
     
     default:
