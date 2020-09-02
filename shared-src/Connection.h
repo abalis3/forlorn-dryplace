@@ -18,14 +18,16 @@
 
 #include <string>
 #include <stdexcept>
+#include <functional>
 
 #include "pbuf/generated/NetworkMessage.pb.h"
 
 #if COMPILING_ON_WINDOWS
+    #define CloseWindow win_disabled_CloseWindow
     #include <winsock2.h>
+    #undef CloseWindow
 #else
     #include <sys/socket.h>
-    #include <functional>
 #endif
 
 #define RECV_BUFFER_SIZE 4096
@@ -99,7 +101,7 @@ class Connection {
 
  private:
 
-#if not(COMPILING_ON_WINDOWS)
+#if !COMPILING_ON_WINDOWS
     /* Private constructor to be used by the Listener when it receives an incoming connection */
     Connection(int sockfd);
 #endif
@@ -140,7 +142,7 @@ class Connection {
     /* The network message struct to parse into when receiving data */
     pbuf::NetworkMessage recvMsg;
 
-#if not(COMPILING_ON_WINDOWS)
+#if !COMPILING_ON_WINDOWS
     /* We need listener as a friend to create Connections from socket descriptors */
     friend class Listener;
 #endif
@@ -153,7 +155,7 @@ class Connection {
  * the notification callback so it can then be used in whatever way deemed fit by the
  * initiator of the listener. ONLY IMPLEMENTED FOR NON-WINDOWS BUILDS.
  */
-#if not(COMPILING_ON_WINDOWS)
+#if !COMPILING_ON_WINDOWS
 class Listener {
  public:
 
@@ -182,18 +184,18 @@ class Listener {
 
 };
 
-/* Empty exception type to throw when a connection fails */
-class ConnectionException : public std::runtime_error {
- public:
-    ConnectionException(const char* message) : std::runtime_error(message) {}
-};
-
 /* Empty exception type to throw when a listener fails */
 class ListenerException : public std::runtime_error {
  public:
     ListenerException(const char* message) : std::runtime_error(message) {}
 };
 
-#endif
+#endif /* End linux-only listener implementation */
+
+/* Empty exception type to throw when a connection fails */
+class ConnectionException : public std::runtime_error {
+ public:
+    ConnectionException(const char* message) : std::runtime_error(message) {}
+};
 
 #endif

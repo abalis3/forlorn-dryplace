@@ -16,19 +16,21 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../vcpkg/installed/x86-windows/include;./include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../vcpkg/installed/x86-windows/include;./include;../shared-src</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>RAYLIB_CPP_NO_MATH=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../vcpkg/installed/x86-windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>raylib.lib;libprotobuf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>raylib.lib;libprotobuf.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ItemGroup>
     <ClCompile Include="./src/*.cpp" />
     <ClCompile Include="./src/pbuf/generated/*.cc" />
+    <ClCompile Include="../shared-src/*.cpp" />
+    <ClCompile Include="../shared-src/pbuf/generated/*.cc" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="./ci/windowsicon.rc">

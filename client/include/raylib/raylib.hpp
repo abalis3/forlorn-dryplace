@@ -1,6 +1,9 @@
 #ifndef RAYLIB_CPP_RAYLIB_CPP_HPP_
 #define RAYLIB_CPP_RAYLIB_CPP_HPP_
 
+#define UnhideWindow ray_disabled_UnhideWindow
+#define ShowCursor ray_disabled_ShowCursor
+
 #include "AudioDevice.hpp"
 #include "AudioStream.hpp"
 #include "BoundingBox.hpp"
@@ -30,5 +33,8 @@
 #include "VrSimulator.hpp"
 #include "Wave.hpp"
 #include "Window.hpp"
+
+#undef UnhideWindow
+#undef ShowCursor
 
 #endif

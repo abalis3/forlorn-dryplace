@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "MainMenu.h"
 #include "Util.h"
+#include "Connection.h"
 
 using namespace std::placeholders;
 
@@ -41,6 +42,7 @@ class GameRunner {
 
 GameRunner::GameRunner()
 {
+	Connection::init();
 	window = new Window();
 	mainMenu = new MainMenu(*window);
 	mainMenu->setWindowRequestCallback(std::bind(&GameRunner::onWindowRequest, this, _1));
@@ -51,6 +53,7 @@ GameRunner::~GameRunner()
 {
 	delete mainMenu;
 	delete window;
+	Connection::quit();
 }
 
 void GameRunner::run()
