@@ -31,6 +31,8 @@ void ServerSession::open(std::string name)
         ConnectionCallbacks cbs = {
             .onConnectSuccess = std::bind(&ServerSession::onConnectSuccess, this, _1),
             .onConnectFail = std::bind(&ServerSession::onConnectFail, this, _1),
+            .onConnectionLost = std::bind(&ServerSession::onConnectionLost, this, _1),
+            .onMsgReceived = std::bind(&ServerSession::onMsgReceived, this, _1, _2),
         };
 
         try {
@@ -93,5 +95,38 @@ void ServerSession::onConnectFail(Connection *conn)
     connection = nullptr;
     if (callback != nullptr) {
         callback(Event::CONNECTION_LOST);
+    }
+}
+
+void ServerSession::onConnectionLost(Connection *conn) {
+    
+    if (conn != connection) {
+        /* This is probably bad... */
+        return;
+    }
+
+    delete connection;
+    connection = nullptr;
+    if (callback != nullptr) {
+        callback(Event::CONNECTION_LOST);
+    }
+}
+
+void ServerSession::onMsgReceived(Connection *conn, pbuf::NetworkMessage msg) {
+    switch(msg.type_case()) {
+    case pbuf::NetworkMessage::kNameReply:
+        if (msg.namereply()) {
+            if (callback != nullptr) {
+                callback(Event::NAME_ACCEPTED);
+            }
+        } else {
+            if (callback != nullptr) {
+                callback(Event::NAME_REJECTED);
+            }
+        }
+        break;
+
+    default:
+        break;
     }
 }

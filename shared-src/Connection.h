@@ -48,8 +48,14 @@ struct ConnectionCallbacks {
      */
     std::function<void(Connection*)> onConnectFail;
 
-    /* Called when the connection is lost completely after being opened successfully */
+    /* Called when the connection is lost completely or aborted after being opened successfully */
     std::function<void(Connection*)> onConnectionLost;
+
+    /*
+     * Called when a NetworkMessage is received over the connection and has been parsed successfully
+     * WARNING! No deleting the Connection with this callback in the function stack!
+     */
+    std::function<void(Connection*, pbuf::NetworkMessage)> onMsgReceived;
 };
 
 /* 
@@ -88,6 +94,9 @@ class Connection {
     /* Poll method for the connection. This should be called regularly with the time since last call */
     void poll(double secs);
 
+    /* Used to set the onMsgReceived callback function for the Connection */
+    void setOnMsgReceivedCallback(std::function<void(Connection*, pbuf::NetworkMessage)> cb);
+
  private:
 
 #if not(COMPILING_ON_WINDOWS)
@@ -124,6 +133,9 @@ class Connection {
     /* The buffer into which received data will be read before decoding it */
     char recvBuffer[RECV_BUFFER_SIZE];
     int recvBufferPos;
+
+    /* This var tracks the size of the currently-being-read NetworkMessage with recv */
+    uint16_t recvMsgSize;
 
     /* The network message struct to parse into when receiving data */
     pbuf::NetworkMessage recvMsg;

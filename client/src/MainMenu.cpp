@@ -701,6 +701,7 @@ void MainMenu::onSessionEvent(ServerSession::Event event)
     switch (event) {
     case ServerSession::Event::CONNECTION_LOST:
     case ServerSession::Event::NAME_ACCEPTED:
+    case ServerSession::Event::NAME_REJECTED:
         olNameSubmitResult = event;
         break;
 

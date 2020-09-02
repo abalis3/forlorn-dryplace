@@ -91,6 +91,10 @@ Connection::Connection(int sockfd)
     currentState = State::ACTIVE;
     this->sockfd = sockfd;
     recvBufferPos = 0;
+    cbs.onConnectFail = nullptr;
+    cbs.onConnectionLost = nullptr;
+    cbs.onConnectSuccess = nullptr;
+    cbs.onMsgReceived = nullptr;
 }
 
 void Connection::sendNetworkMessage(pbuf::NetworkMessage &msg)
@@ -106,10 +110,10 @@ void Connection::sendNetworkMessage(pbuf::NetworkMessage &msg)
         throw ConnectionException("Error forming name request message");
     }
 
-    uint32_t serializedLen = htonl(serialized.length());
+    uint16_t serializedLen = htons(serialized.length());
 
-    res = send(sockfd, &serializedLen, 4, 0);
-    if (res != 4) {
+    res = send(sockfd, &serializedLen, 2, 0);
+    if (res != 2) {
         /* 
          * Lost conn or full buffer. In either case, fail outright for now.
          * In the future, consider handling full buffer case if it ever actually happens
@@ -197,28 +201,80 @@ void Connection::poll(double secs)
 
     } else if (sockfd >= 0) {
         /* We have an active / suspended connection. Try receiving */
-        ssize_t res = recv(sockfd, &recvBuffer[recvBufferPos], RECV_BUFFER_SIZE - recvBufferPos, 0);
-        if (res == 0 || (res == -1 && errno != EAGAIN && errno != EWOULDBLOCK)) {
-            /* Uh oh - a real error and not just nonblocking flagging (or graceful shutdown) */
-            close(sockfd);
-            sockfd = -1;
-            currentState = State::DISCONNECTED;
-            if (cbs.onConnectionLost != nullptr) {
-                cbs.onConnectionLost(this);
+        
+        bool recv_again = true;
+        ssize_t res;
+
+        while (recv_again) {
+            recv_again = false;
+
+            /* Look for the 2-byte length prefix if we haven't received it yet */
+            if (recvBufferPos < 2) {
+                res = recv(sockfd, &recvBuffer[recvBufferPos], 2 - recvBufferPos, 0);
+                if (res == 0 || (res == -1 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+                    /* Uh oh - a real error and not just nonblocking flagging (or graceful shutdown) */
+                    close(sockfd);
+                    sockfd = -1;
+                    currentState = State::DISCONNECTED;
+                    if (cbs.onConnectionLost != nullptr) {
+                        cbs.onConnectionLost(this);
+                    }
+                    return;
+                } else if (res > 0) {
+                    /* We got data! */
+                    recvBufferPos += res;
+                    if (recvBufferPos == 2) {
+                        recvMsgSize = ntohs(*((uint16_t*) &recvBuffer[0]));
+                    }
+                }
             }
-            return;
-        } else if (res > 0) {
-            /* We got data! */
-            recvBufferPos += res;
-            if (recvBufferPos >= 4) {
-                uint32_t msgSize = ntohl(*((uint32_t*) &recvBuffer[0]));
-                if (recvBufferPos >= 4 + msgSize) {
-                    bool successfulParse = recvMsg.ParseFromArray(&recvBuffer[4], msgSize);
+
+            /* Read recvMsgSize bytes of data to actually be parsed as a NetworkMessage protobuf */
+            if (recvBufferPos >= 2) {
+                res = recv(sockfd, &recvBuffer[recvBufferPos], (recvMsgSize + 2) - recvBufferPos, 0);
+                if (res == 0 || (res == -1 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+                    /* Uh oh - a real error and not just nonblocking flagging (or graceful shutdown) */
+                    close(sockfd);
+                    sockfd = -1;
+                    currentState = State::DISCONNECTED;
+                    if (cbs.onConnectionLost != nullptr) {
+                        cbs.onConnectionLost(this);
+                    }
+                    return;
+                } else if (res > 0) {
+                    /* We got data! */
+                    recvBufferPos += res;
+                    if (recvBufferPos == 2 + recvMsgSize) {
+                        /* Got the whole message! Let's parse it */
+                        bool successfulParse = recvMsg.ParseFromArray(&recvBuffer[2], recvMsgSize);
+                        if (!successfulParse) {
+                            /* Parsing failed. No saving this connection now. */
+                            close(sockfd);
+                            sockfd = -1;
+                            currentState = State::DISCONNECTED;
+                            if (cbs.onConnectionLost != nullptr) {
+                                cbs.onConnectionLost(this);
+                            }
+                            return;
+                        }
+                        if (cbs.onMsgReceived != nullptr) {
+                            cbs.onMsgReceived(this, recvMsg);
+                        }
+                        recvBufferPos = 0; /* Prepare to read next message */
+                        recv_again = true;
+                    }
                 }
             }
         }
     }
 }
+
+void
+Connection::setOnMsgReceivedCallback(std::function<void(Connection*, pbuf::NetworkMessage)> cb)
+{
+    cbs.onMsgReceived = cb;
+}
+
 
 /* Implementation for Listener class */
 #if not(COMPILING_ON_WINDOWS)
