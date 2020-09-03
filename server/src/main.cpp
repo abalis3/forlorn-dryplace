@@ -16,11 +16,17 @@ static void onMsgRecv(Connection *conn, pbuf::NetworkMessage msg) {
             if (sess == nullptr) {
                 sess = sessions->findByConnection(conn);
             }
+            if (sess->getName() == nullptr) {
+                std::cout << "Accepted name '" << msg.namerequest() << "' for session with " <<
+                        conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
+            } else {
+                std::cout << "Updated name to '" << msg.namerequest() << "' for session with " <<
+                        conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
+            }
             sess->setName(msg.namerequest());
-            std::cout << "Name request approved for name '" << msg.namerequest() << "'" << std::endl;
         } else {
-            std::cout << "Name request rejected with already taken name '"
-                    << msg.namerequest() << "'" << std::endl;
+            std::cout << "Already-taken name '" << msg.namerequest() << "' rejected for session with " <<
+                    conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
         }
         reply.set_namereply(nameSuccess);
         conn->sendNetworkMessage(reply);
@@ -30,8 +36,8 @@ static void onMsgRecv(Connection *conn, pbuf::NetworkMessage msg) {
 static void onConnectionLost(Connection *conn) {
     Session *sess = sessions->findByConnection(conn);
     if (sess != nullptr) {
+        std::cout << "Connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << " terminated" << std::endl;
         sessions->destroySession(sess);
-        std::cout << "Connection Terminated" << std::endl;
     }
 }
 
@@ -42,7 +48,7 @@ static void onConnAccept(Connection *conn)
     Session *sess = sessions->generateSession();
     sess->setConnection(conn);
 
-    std::cout << "Connection Received" << std::endl;
+    std::cout << "Connection received from " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
 }
 
 int main()

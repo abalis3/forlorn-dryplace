@@ -1,6 +1,10 @@
 #include "ServerSession.h"
 #include "pbuf/generated/NetworkMessage.pb.h"
 
+//#define SERVER_ADDR "127.0.0.1"
+#define SERVER_ADDR "193.161.193.99"
+#define SERVER_PORT 47411
+
 /* For std::bind _1, _2 ... */
 using namespace std::placeholders;
 
@@ -36,7 +40,7 @@ void ServerSession::open(std::string name)
         };
 
         try {
-            connection = new Connection("127.0.0.1", 44444, 10, cbs);
+            connection = new Connection(SERVER_ADDR, SERVER_PORT, 10, cbs);
             this->name = name;
         } catch (ConnectionException &exc) {
             if (callback != nullptr) {

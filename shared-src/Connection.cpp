@@ -6,7 +6,6 @@
 
 #else /* Compiling on linux/mac */
 
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
 #include <unistd.h>
@@ -124,6 +123,20 @@ Connection::Connection(int sockfd)
     cbs.onConnectionLost = nullptr;
     cbs.onConnectSuccess = nullptr;
     cbs.onMsgReceived = nullptr;
+
+    /* Make a record of the remote endpoint details */
+    socklen_t addr_len = sizeof(peerAddr);
+    getpeername(sockfd, (struct sockaddr*) &peerAddr, &addr_len);
+}
+
+std::string Connection::getPeerIp()
+{
+    return inet_ntoa(peerAddr.sin_addr);
+}
+
+uint16_t Connection::getPeerPort()
+{
+    return ntohs(peerAddr.sin_port);
 }
 #endif
 

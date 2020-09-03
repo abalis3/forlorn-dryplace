@@ -28,6 +28,7 @@
     #undef CloseWindow
 #else
     #include <sys/socket.h>
+    #include <netinet/in.h>
 #endif
 
 #define RECV_BUFFER_SIZE 4096
@@ -96,6 +97,14 @@ class Connection {
     /* Poll method for the connection. This should be called regularly with the time since last call */
     void poll(double secs);
 
+#if !COMPILING_ON_WINDOWS
+    /* Get the peer ip address as a string for this connection */
+    std::string getPeerIp();
+
+    /* Get the peer port number as a number for this connection */
+    uint16_t getPeerPort();
+#endif
+
     /* Used to set the onConnectionLost callback function for the Connection */
     void setOnConnectionLostCallback(std::function<void(Connection*)> cb);
 
@@ -107,6 +116,9 @@ class Connection {
 #if !COMPILING_ON_WINDOWS
     /* Private constructor to be used by the Listener when it receives an incoming connection */
     Connection(int sockfd);
+
+    /* Local member to store address of the peer endpoint */
+    struct sockaddr_in peerAddr;
 #endif
 
     /* The states this connection may be in */
