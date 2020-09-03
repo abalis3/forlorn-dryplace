@@ -1,11 +1,20 @@
 #include "Connection.h"
 
+#if COMPILING_ON_WINDOWS
+
+#include <Ws2tcpip.h>
+
+#else /* Compiling on linux/mac */
+
 #include <netinet/in.h>
-#include <arpa/inet.h> 
+#include <arpa/inet.h>
 #include <sys/select.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+
+#endif
+
 #include <iostream>
 
 /* How many connections can be accepted at TCP level before handling with accept() */
@@ -33,10 +42,9 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
     int flags;
     int err;
 
-    struct sockaddr_in address = {
-        .sin_family = AF_INET,
-        .sin_port = htons(port),
-    };
+    struct sockaddr_in address;
+    address.sin_family = AF_INET,
+    address.sin_port = htons(port),
     
     /* Parse the ip addr from the given ip string */
     err = inet_pton(AF_INET, ip.c_str(), &address.sin_addr);
@@ -46,21 +54,35 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
 
     /* Create the socket file descriptor */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
+#if COMPILING_ON_WINDOWS
+    if (sockfd == INVALID_SOCKET) {
+#else
     if (sockfd < 0) {
+#endif
         throw ConnectionException("Socket creation failed");
     }
 
     /* Set the socket to nonblocking mode */
+#if COMPILING_ON_WINDOWS
+    u_long nbmode = 1;
+    err = ioctlsocket(sockfd, FIONBIO, &nbmode);
+    if (err == SOCKET_ERROR) {
+#else
     flags = fcntl(sockfd, F_GETFL, 0);
     err = fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
     if (err == -1) {
+#endif
         throw ConnectionException("Failed to set socket to nonblocking mode");
     }
 
     err = connect(sockfd, (struct sockaddr *) &address, sizeof(address));
     if (err != 0) {
-        /* Immediate failure */
+#if COMPILING_ON_WINDOWS
+        if (WSAGetLastError() != WSAEWOULDBLOCK) {
+#else
         if (errno != EAGAIN && errno != EINPROGRESS) {
+#endif
+            /* Immediate failure */
             throw ConnectionException("Failed to connect to socket endpoint");
         }
     }
@@ -81,11 +103,18 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
 
 Connection::~Connection()
 {
+#if COMPILING_ON_WINDOWS
+    if (sockfd != INVALID_SOCKET) {
+        closesocket(sockfd);
+    }
+#else
     if (sockfd >= 0) {
         close(sockfd);
     }
+#endif
 }
 
+#if !COMPILING_ON_WINDOWS
 Connection::Connection(int sockfd)
 {
     currentState = State::ACTIVE;
@@ -96,10 +125,15 @@ Connection::Connection(int sockfd)
     cbs.onConnectSuccess = nullptr;
     cbs.onMsgReceived = nullptr;
 }
+#endif
 
 void Connection::sendNetworkMessage(pbuf::NetworkMessage &msg)
 {
+#if COMPILING_ON_WINDOWS
+    int res;
+#else
     ssize_t res;
+#endif
 
     if (currentState == State::DISCONNECTED) {
         throw ConnectionException("Cannot send data over closed connection");
@@ -111,15 +145,23 @@ void Connection::sendNetworkMessage(pbuf::NetworkMessage &msg)
     }
 
     uint16_t serializedLen = htons(serialized.length());
-
+#if COMPILING_ON_WINDOWS
+    res = send(sockfd, (char*) &serializedLen, 2, 0);
+#else
     res = send(sockfd, &serializedLen, 2, 0);
+#endif
     if (res != 2) {
         /* 
          * Lost conn or full buffer. In either case, fail outright for now.
          * In the future, consider handling full buffer case if it ever actually happens
          */
+#if COMPILING_ON_WINDOWS
+        closesocket(sockfd);
+        sockfd = INVALID_SOCKET;
+#else
         close(sockfd);
         sockfd = -1;
+#endif
         currentState = State::DISCONNECTED;
         if (cbs.onConnectionLost != nullptr) {
             cbs.onConnectionLost(this);
@@ -133,8 +175,13 @@ void Connection::sendNetworkMessage(pbuf::NetworkMessage &msg)
          * Lost conn or full buffer. In either case, fail outright for now.
          * In the future, consider handling full buffer case if it ever actually happens
          */
+#if COMPILING_ON_WINDOWS
+        closesocket(sockfd);
+        sockfd = INVALID_SOCKET;
+#else
         close(sockfd);
         sockfd = -1;
+#endif
         currentState = State::DISCONNECTED;
         if (cbs.onConnectionLost != nullptr) {
             cbs.onConnectionLost(this);
@@ -145,7 +192,11 @@ void Connection::sendNetworkMessage(pbuf::NetworkMessage &msg)
 
 void Connection::poll(double secs)
 {
+#if COMPILING_ON_WINDOWS
+    if (currentState == State::DISCONNECTED && sockfd != INVALID_SOCKET) {
+#else
     if (currentState == State::DISCONNECTED && sockfd >= 0) {
+#endif
         /* Waiting for socket connect nonblocking result */
 
         fd_set fdset;
@@ -159,21 +210,40 @@ void Connection::poll(double secs)
 
         int err = select(sockfd+1, NULL, &fdset, NULL, &tv);
 
+#if COMPILING_ON_WINDOWS
+        if (err == SOCKET_ERROR) {
+            closesocket(sockfd);
+            sockfd = INVALID_SOCKET;
+            throw ConnectionException("Error polling for connection status");
+        }
+        /* err = 0 means timeout for windows and falls through as we want */
+#else
         if (err < 0) {
-            if (errno != EINTR) {
+            if (errno != EINTR) { /* Fall through for 'timeout' */
                 /* Error polling socket for connection status */
+                close(sockfd);
                 sockfd = -1;
                 throw ConnectionException("Error polling for connection status");
             }
-        } else if (err > 0) {
+        }
+#endif
+        else if (err > 0) {
 
             int optval;
             socklen_t optlen = sizeof(int);
+#if COMPILING_ON_WINDOWS
+            err = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *) &optval, &optlen);
+            if (err != 0 || optval != 0) {
+                /* Error on socket connection */
+                closesocket(sockfd);
+                sockfd = INVALID_SOCKET;
+#else
             err = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (void *) &optval, &optlen);
-
             if (err < 0 || optval != 0) {
                 /* Error on socket connection */
+                close(sockfd);
                 sockfd = -1;
+#endif
                 if (cbs.onConnectFail != nullptr) {
                     cbs.onConnectFail(this);
                 }
@@ -192,18 +262,33 @@ void Connection::poll(double secs)
         timer += secs;
         if (timer > openTimeout) {
             /* Timed out waiting for connection */
+#if COMPILING_ON_WINDOWS
+            closesocket(sockfd);
+            sockfd = INVALID_SOCKET;
+#else
+            close(sockfd);
             sockfd = -1;
+#endif
             if (cbs.onConnectFail != nullptr) {
                 cbs.onConnectFail(this);
             }
             return;
         }
 
+#if COMPILING_ON_WINDOWS
+    } else if (sockfd != INVALID_SOCKET) {
+#else
     } else if (sockfd >= 0) {
+#endif
         /* We have an active / suspended connection. Try receiving */
         
         bool recv_again = true;
+
+#if COMPILING_ON_WINDOWS
+        int res;
+#else
         ssize_t res;
+#endif
 
         while (recv_again) {
             recv_again = false;
@@ -211,10 +296,17 @@ void Connection::poll(double secs)
             /* Look for the 2-byte length prefix if we haven't received it yet */
             if (recvBufferPos < 2) {
                 res = recv(sockfd, &recvBuffer[recvBufferPos], 2 - recvBufferPos, 0);
+#if COMPILING_ON_WINDOWS
+                if (res == 0 || (res == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK)) {
+                    /* Uh oh - a real error and not just nonblocking flagging (or graceful shutdown) */
+                    closesocket(sockfd);
+                    sockfd = INVALID_SOCKET;
+#else
                 if (res == 0 || (res == -1 && errno != EAGAIN && errno != EWOULDBLOCK)) {
                     /* Uh oh - a real error and not just nonblocking flagging (or graceful shutdown) */
                     close(sockfd);
                     sockfd = -1;
+#endif
                     currentState = State::DISCONNECTED;
                     if (cbs.onConnectionLost != nullptr) {
                         cbs.onConnectionLost(this);
@@ -232,10 +324,17 @@ void Connection::poll(double secs)
             /* Read recvMsgSize bytes of data to actually be parsed as a NetworkMessage protobuf */
             if (recvBufferPos >= 2) {
                 res = recv(sockfd, &recvBuffer[recvBufferPos], (recvMsgSize + 2) - recvBufferPos, 0);
+#if COMPILING_ON_WINDOWS
+                if (res == 0 || (res == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK)) {
+                    /* Uh oh - a real error and not just nonblocking flagging (or graceful shutdown) */
+                    closesocket(sockfd);
+                    sockfd = INVALID_SOCKET;
+#else
                 if (res == 0 || (res == -1 && errno != EAGAIN && errno != EWOULDBLOCK)) {
                     /* Uh oh - a real error and not just nonblocking flagging (or graceful shutdown) */
                     close(sockfd);
                     sockfd = -1;
+#endif
                     currentState = State::DISCONNECTED;
                     if (cbs.onConnectionLost != nullptr) {
                         cbs.onConnectionLost(this);
@@ -249,8 +348,13 @@ void Connection::poll(double secs)
                         bool successfulParse = recvMsg.ParseFromArray(&recvBuffer[2], recvMsgSize);
                         if (!successfulParse) {
                             /* Parsing failed. No saving this connection now. */
+#if COMPILING_ON_WINDOWS
+                            closesocket(sockfd);
+                            sockfd = INVALID_SOCKET;
+#else
                             close(sockfd);
                             sockfd = -1;
+#endif
                             currentState = State::DISCONNECTED;
                             if (cbs.onConnectionLost != nullptr) {
                                 cbs.onConnectionLost(this);
@@ -269,15 +373,19 @@ void Connection::poll(double secs)
     }
 }
 
-void
-Connection::setOnMsgReceivedCallback(std::function<void(Connection*, pbuf::NetworkMessage)> cb)
+void Connection::setOnConnectionLostCallback(std::function<void(Connection*)> cb)
+{
+    cbs.onConnectionLost = cb;
+}
+
+void Connection::setOnMsgReceivedCallback(std::function<void(Connection*, pbuf::NetworkMessage)> cb)
 {
     cbs.onMsgReceived = cb;
 }
 
 
 /* Implementation for Listener class */
-#if not(COMPILING_ON_WINDOWS)
+#if !COMPILING_ON_WINDOWS
 
 Listener::Listener(uint16_t port, std::function<void(Connection*)> cb)
 {

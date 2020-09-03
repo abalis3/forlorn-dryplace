@@ -10,16 +10,11 @@ SessionList *sessions;
 static void onMsgRecv(Connection *conn, pbuf::NetworkMessage msg) {
     if (msg.type_case() == pbuf::NetworkMessage::kNameRequest) {
         pbuf::NetworkMessage reply;
-        ///std::cout << "here1" << std::endl;
         Session *sess = sessions->findByName(msg.namerequest());
-        ///std::cout << "here2" << std::endl;
         bool nameSuccess = ((sess == nullptr) || (sess->getConnection() == conn));
         if (nameSuccess) {
-            ///std::cout << "here3" << std::endl;
             if (sess == nullptr) {
-                ///std::cout << "here4" << std::endl;
                 sess = sessions->findByConnection(conn);
-                ///std::cout << "here5" << std::endl;
             }
             sess->setName(msg.namerequest());
             std::cout << "Name request approved for name '" << msg.namerequest() << "'" << std::endl;
@@ -32,9 +27,18 @@ static void onMsgRecv(Connection *conn, pbuf::NetworkMessage msg) {
     }
 }
 
+static void onConnectionLost(Connection *conn) {
+    Session *sess = sessions->findByConnection(conn);
+    if (sess != nullptr) {
+        sessions->destroySession(sess);
+        std::cout << "Connection Terminated" << std::endl;
+    }
+}
+
 static void onConnAccept(Connection *conn)
 {
     conn->setOnMsgReceivedCallback(onMsgRecv);
+    conn->setOnConnectionLostCallback(onConnectionLost);
     Session *sess = sessions->generateSession();
     sess->setConnection(conn);
 
@@ -61,15 +65,10 @@ int main()
         listener->poll();
         Session *sess = sessions->getFirst();
         while (sess != nullptr) {
-            ///std::cout << "poll" << std::endl;
             Connection *conn = sess->getConnection();
-            ///std::cout << "poll2" << std::endl;
             if (conn != nullptr) {
-                ///std::cout << "poll3" << std::endl;
                 conn->poll(1.0);
-                ///std::cout << "poll4" << std::endl;
             }
-            ///std::cout << "poll5" << std::endl;
             sess = sess->getNext();
         }
     }

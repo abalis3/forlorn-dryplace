@@ -96,6 +96,9 @@ class Connection {
     /* Poll method for the connection. This should be called regularly with the time since last call */
     void poll(double secs);
 
+    /* Used to set the onConnectionLost callback function for the Connection */
+    void setOnConnectionLostCallback(std::function<void(Connection*)> cb);
+
     /* Used to set the onMsgReceived callback function for the Connection */
     void setOnMsgReceivedCallback(std::function<void(Connection*, pbuf::NetworkMessage)> cb);
 

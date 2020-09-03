@@ -29,10 +29,10 @@ void ServerSession::open(std::string name)
     if (connection == nullptr){
 
         ConnectionCallbacks cbs = {
-            .onConnectSuccess = std::bind(&ServerSession::onConnectSuccess, this, _1),
-            .onConnectFail = std::bind(&ServerSession::onConnectFail, this, _1),
-            .onConnectionLost = std::bind(&ServerSession::onConnectionLost, this, _1),
-            .onMsgReceived = std::bind(&ServerSession::onMsgReceived, this, _1, _2),
+            std::bind(&ServerSession::onConnectSuccess, this, _1),
+            std::bind(&ServerSession::onConnectFail, this, _1),
+            std::bind(&ServerSession::onConnectionLost, this, _1),
+            std::bind(&ServerSession::onMsgReceived, this, _1, _2),
         };
 
         try {
