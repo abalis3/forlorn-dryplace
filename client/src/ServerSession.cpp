@@ -40,7 +40,7 @@ void ServerSession::open(std::string name)
         };
 
         try {
-            connection = new Connection(SERVER_ADDR, SERVER_PORT, 10, cbs);
+            connection = new Connection(SERVER_ADDR, SERVER_PORT, 5, cbs);
             this->name = name;
         } catch (ConnectionException &exc) {
             if (callback != nullptr) {
