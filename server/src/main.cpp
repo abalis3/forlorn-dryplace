@@ -70,6 +70,9 @@ int main()
     while (running) {
         listener->poll();
         Session *sess = sessions->getFirst();
+        if (sess == nullptr) {
+            usleep(50000); /* If no sessions currently active, sleep for .05 seconds to conserve CPU */
+        }
         while (sess != nullptr) {
             Connection *conn = sess->getConnection();
             if (conn != nullptr) {
