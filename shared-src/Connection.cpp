@@ -393,7 +393,9 @@ void Connection::poll(double secs)
                         }
                         if (currentState != State::ACTIVE) {
                             currentState = State::ACTIVE;
-                            /* TODO: Notify of re-active connection */
+                            if (cbs.onConnectionResumed != nullptr) {
+                                cbs.onConnectionResumed(this);
+                            }                        
                         }
 
                         if (recvMsg.type_case() == pbuf::NetworkMessage::kProbeType) {
@@ -429,7 +431,9 @@ void Connection::poll(double secs)
 
         if (timer >= PING_PONG_TIME*2 && currentState == State::ACTIVE) {
             currentState = State::SUSPENDED;
-            /* TODO: notify of suspended connection */
+            if (cbs.onConnectionSuspended != nullptr) {
+                cbs.onConnectionSuspended(this);
+            }
         }
 
         /* Close out long-term inactive socket */

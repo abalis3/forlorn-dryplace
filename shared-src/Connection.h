@@ -57,12 +57,14 @@ struct ConnectionCallbacks {
     /* 
      * Called when the connection moves from being ACTIVE to SUSPENDED. This means some network
      * instability has occurred but the connection is still potentially going to survive.
+     * WARNING! No deleting the Connection with this callback in the function stack!
      */
     std::function<void(Connection*)> onConnectionSuspended;
 
     /*
      * Called when the connection moves from being SUSPENDED to ACTIVE. This means the connection
      * has recovered from instability and is again healthy.
+     * WARNING! No deleting the Connection with this callback in the function stack!
      */
     std::function<void(Connection*)> onConnectionResumed;
 
