@@ -13,6 +13,7 @@ ServerSession::ServerSession()
     connection = nullptr;
     callback = nullptr;
     retryNameRequest = false;
+    requestingName = false;
 }
 
 ServerSession::~ServerSession()
@@ -67,6 +68,7 @@ void ServerSession::poll(double secs)
 
 void ServerSession::sendNameRequest()
 {
+    requestingName = true;
     pbuf::NetworkMessage msg;
     msg.set_namerequest(name);
     try {
@@ -97,8 +99,9 @@ void ServerSession::onConnectFail(Connection *conn)
 
     delete connection;
     connection = nullptr;
+    requestingName = false;
     if (callback != nullptr) {
-        callback(Event::CONNECTION_LOST);
+        callback(Event::CONNECTION_FAILED);
     }
 }
 
@@ -112,13 +115,19 @@ void ServerSession::onConnectionLost(Connection *conn) {
     delete connection;
     connection = nullptr;
     if (callback != nullptr) {
-        callback(Event::CONNECTION_LOST);
+        if (requestingName) {
+            requestingName = false;
+            callback(Event::CONNECTION_FAILED);
+        } else {
+            callback(Event::CONNECTION_LOST);
+        }
     }
 }
 
 void ServerSession::onMsgReceived(Connection *conn, pbuf::NetworkMessage msg) {
     switch(msg.type_case()) {
     case pbuf::NetworkMessage::kNameReply:
+        requestingName = false;
         if (msg.namereply()) {
             if (callback != nullptr) {
                 callback(Event::NAME_ACCEPTED);

@@ -699,7 +699,7 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
 void MainMenu::onSessionEvent(ServerSession::Event event)
 {
     switch (event) {
-    case ServerSession::Event::CONNECTION_LOST:
+    case ServerSession::Event::CONNECTION_FAILED:
     case ServerSession::Event::NAME_ACCEPTED:
     case ServerSession::Event::NAME_REJECTED:
         olNameSubmitResult = event;
@@ -726,7 +726,7 @@ void MainMenu::triggerNameSubmission()
 void MainMenu::handleNameSubmissionResult()
 {
     switch(olNameSubmitResult) {
-    case ServerSession::Event::CONNECTION_LOST:
+    case ServerSession::Event::CONNECTION_FAILED:
         olNameLoading = false;
         olNameTextBox->setEnabled(true);
         olNameSubmitZoomSel->setEnabled(true);

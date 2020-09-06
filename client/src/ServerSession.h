@@ -25,7 +25,8 @@ class ServerSession {
 
     enum class Event {
         NONE,
-        CONNECTION_LOST,
+        CONNECTION_LOST,    /* AFTER name accepted/rejected, loss of connection */
+        CONNECTION_FAILED,  /* Connection not made or lost before name accept/reject */
         NAME_ACCEPTED,
         NAME_REJECTED,
     };
@@ -52,6 +53,9 @@ class ServerSession {
 
     /* Set to true if the name request fails so we can keep retrying */
     bool retryNameRequest;
+
+    /* Set to true if currently in process of connecting / requesting name */
+    bool requestingName;
 
     /* Sends a name request protobuf message over the connection containing the name class member */
     void sendNameRequest();
