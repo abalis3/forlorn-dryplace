@@ -54,6 +54,18 @@ struct ConnectionCallbacks {
     /* Called when the connection is lost completely or aborted after being opened successfully */
     std::function<void(Connection*)> onConnectionLost;
 
+    /* 
+     * Called when the connection moves from being ACTIVE to SUSPENDED. This means some network
+     * instability has occurred but the connection is still potentially going to survive.
+     */
+    std::function<void(Connection*)> onConnectionSuspended;
+
+    /*
+     * Called when the connection moves from being SUSPENDED to ACTIVE. This means the connection
+     * has recovered from instability and is again healthy.
+     */
+    std::function<void(Connection*)> onConnectionResumed;
+
     /*
      * Called when a NetworkMessage is received over the connection and has been parsed successfully
      * WARNING! No deleting the Connection with this callback in the function stack!
@@ -108,6 +120,12 @@ class Connection {
     /* Used to set the onConnectionLost callback function for the Connection */
     void setOnConnectionLostCallback(std::function<void(Connection*)> cb);
 
+    /* Used to set the onConnectionSuspended callback function for the Connection */
+    void setOnConnectionSuspendedCallback(std::function<void(Connection*)> cb);
+
+    /* Used to set the onConnectionResumed callback function for the Connection */
+    void setOnConnectionResumedCallback(std::function<void(Connection*)> cb);
+
     /* Used to set the onMsgReceived callback function for the Connection */
     void setOnMsgReceivedCallback(std::function<void(Connection*, pbuf::NetworkMessage)> cb);
 
@@ -143,6 +161,12 @@ class Connection {
 
     /* Used as a stopwatch, to count up when timing some aspect of a socket */
     double timer;
+
+    /* Set when a ping is sent to mark that PING is sent until a message is received */
+    bool pingSent;
+
+    /* Flag to mark when pong should be sent. Not sent immediately due to object deletion worry */
+    bool shouldPong;
 
     /* The timeout period when opening a connection. If it takes longer, fail */
     double openTimeout;

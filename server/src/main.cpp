@@ -42,10 +42,20 @@ static void onConnectionLost(Connection *conn) {
     }
 }
 
+static void onConnectionSuspended(Connection *conn) {
+    std::cout << "SUSPENDED connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
+}
+
+static void onConnectionResumed(Connection *conn) {
+    std::cout << "RESUMED connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
+}
+
 static void onConnAccept(Connection *conn)
 {
     conn->setOnMsgReceivedCallback(onMsgRecv);
     conn->setOnConnectionLostCallback(onConnectionLost);
+    conn->setOnConnectionSuspendedCallback(onConnectionSuspended);
+    conn->setOnConnectionResumedCallback(onConnectionResumed);
     Session *sess = sessions->generateSession();
     sess->setConnection(conn);
 

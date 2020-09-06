@@ -37,6 +37,8 @@ void ServerSession::open(std::string name)
             std::bind(&ServerSession::onConnectSuccess, this, _1),
             std::bind(&ServerSession::onConnectFail, this, _1),
             std::bind(&ServerSession::onConnectionLost, this, _1),
+            std::bind(&ServerSession::onConnectionSuspended, this, _1),
+            std::bind(&ServerSession::onConnectionResumed, this, _1),
             std::bind(&ServerSession::onMsgReceived, this, _1, _2),
         };
 
@@ -105,8 +107,8 @@ void ServerSession::onConnectFail(Connection *conn)
     }
 }
 
-void ServerSession::onConnectionLost(Connection *conn) {
-    
+void ServerSession::onConnectionLost(Connection *conn)
+{    
     if (conn != connection) {
         /* This is probably bad... */
         return;
@@ -124,7 +126,39 @@ void ServerSession::onConnectionLost(Connection *conn) {
     }
 }
 
-void ServerSession::onMsgReceived(Connection *conn, pbuf::NetworkMessage msg) {
+void ServerSession::onConnectionSuspended(Connection *conn)
+{
+    if (conn != connection) {
+        /* This is probably bad... */
+        return;
+    }
+
+    /* Suspended connection during name request = abort */
+    if (requestingName) {
+        delete connection;
+        connection = nullptr;
+        if (callback != nullptr) {
+            callback(Event::CONNECTION_FAILED);
+        }
+        return;
+    }
+
+    /* TODO: notify callback of suspended connection? */
+
+}
+
+void ServerSession::onConnectionResumed(Connection *conn)
+{
+    if (conn != connection) {
+        /* This is probably bad... */
+        return;
+    }
+
+    /* TODO: notify callback of recovered connection? */
+}
+
+void ServerSession::onMsgReceived(Connection *conn, pbuf::NetworkMessage msg)
+{
     switch(msg.type_case()) {
     case pbuf::NetworkMessage::kNameReply:
         requestingName = false;

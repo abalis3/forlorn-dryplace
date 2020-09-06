@@ -70,6 +70,8 @@ class ServerSession {
     void onConnectSuccess(Connection *conn);
     void onConnectFail(Connection *conn);
     void onConnectionLost(Connection *conn);
+    void onConnectionSuspended(Connection *conn);
+    void onConnectionResumed(Connection *conn);
     void onMsgReceived(Connection *conn, pbuf::NetworkMessage msg);
 
 };

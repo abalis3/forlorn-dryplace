@@ -19,6 +19,18 @@
 /* How many connections can be accepted at TCP level before handling with accept() */
 static const int SOCKET_ACCEPT_BACKLOG = 10;
 
+/*
+ * How many seconds between PING requests being sent and how long to reply to one.
+ * Note the MAX time to detect a suspended connection is 2*PING_PONG_TIME.
+ */
+static const float PING_PONG_TIME = 2.5;
+
+/*
+ * How many seconds without receiving any messages from the remote before hard shutdown
+ * of this connection. This should be a larger value than 2*PING_PONG_TIME.
+ */
+static const float CLOSE_SUSPENDED_TIME = 60;
+
 /* Implementation for Connection class */
 
 void Connection::init()
@@ -98,6 +110,7 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
     cbs = callbacks;
     timer = 0;
     recvBufferPos = 0;
+    shouldPong = false;
 }
 
 Connection::~Connection()
@@ -119,6 +132,8 @@ Connection::Connection(int sockfd)
     currentState = State::ACTIVE;
     this->sockfd = sockfd;
     recvBufferPos = 0;
+    timer = 0;
+    pingSent = false;
     cbs.onConnectFail = nullptr;
     cbs.onConnectionLost = nullptr;
     cbs.onConnectSuccess = nullptr;
@@ -265,6 +280,8 @@ void Connection::poll(double secs)
 
             /* Success */
             currentState = State::ACTIVE;
+            timer = 0;
+            pingSent = 0;
             if (cbs.onConnectSuccess != nullptr) {
                 cbs.onConnectSuccess(this);
             }
@@ -374,21 +391,87 @@ void Connection::poll(double secs)
                             }
                             return;
                         }
-                        if (cbs.onMsgReceived != nullptr) {
+                        if (currentState != State::ACTIVE) {
+                            currentState = State::ACTIVE;
+                            /* TODO: Notify of re-active connection */
+                        }
+
+                        if (recvMsg.type_case() == pbuf::NetworkMessage::kProbeType) {
+
+                            if (recvMsg.probetype() == pbuf::NetworkMessage_ProbeType_PING) { 
+                                /* Handle ping: flag to send pong once safe to do so */
+                                shouldPong = true;
+                            }
+                            
+                            /* Do nothing for pong (except resetting connection timer below) */
+
+                        } else if (cbs.onMsgReceived != nullptr) {
                             cbs.onMsgReceived(this, recvMsg);
                         }
+                        timer = 0;
+                        pingSent = false;
                         recvBufferPos = 0; /* Prepare to read next message */
                         recv_again = true;
                     }
                 }
             }
         }
+
+        timer += secs;
+
+        if (timer >= PING_PONG_TIME && !pingSent) {
+            /* Send ping */
+            pingSent = true;
+            pbuf::NetworkMessage pingMsg;
+            pingMsg.set_probetype(pbuf::NetworkMessage_ProbeType_PING);
+            sendNetworkMessage(pingMsg);
+        }
+
+        if (timer >= PING_PONG_TIME*2 && currentState == State::ACTIVE) {
+            currentState = State::SUSPENDED;
+            /* TODO: notify of suspended connection */
+        }
+
+        /* Close out long-term inactive socket */
+        if (timer >= CLOSE_SUSPENDED_TIME) {
+#if COMPILING_ON_WINDOWS
+            closesocket(sockfd);
+            sockfd = INVALID_SOCKET;
+#else
+            close(sockfd);
+            sockfd = -1;
+#endif
+            currentState = State::DISCONNECTED;
+            if (cbs.onConnectionLost != nullptr) {
+                cbs.onConnectionLost(this);
+            }
+            return;
+        }
+
+        /* Safe to pong here since if conn is destroyed up stack we don't explode */
+        if (shouldPong) {
+            shouldPong = false;
+            pbuf::NetworkMessage pongMsg;
+            pongMsg.set_probetype(pbuf::NetworkMessage_ProbeType_PONG);
+            sendNetworkMessage(pongMsg);
+        }
+
     }
 }
 
 void Connection::setOnConnectionLostCallback(std::function<void(Connection*)> cb)
 {
     cbs.onConnectionLost = cb;
+}
+
+void Connection::setOnConnectionSuspendedCallback(std::function<void(Connection*)> cb)
+{
+    cbs.onConnectionSuspended = cb;
+}
+
+void Connection::setOnConnectionResumedCallback(std::function<void(Connection*)> cb)
+{
+    cbs.onConnectionResumed = cb;
 }
 
 void Connection::setOnMsgReceivedCallback(std::function<void(Connection*, pbuf::NetworkMessage)> cb)
