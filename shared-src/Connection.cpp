@@ -457,7 +457,16 @@ void Listener::poll()
 {
     int newsock = accept(sockfd, NULL, NULL);
     while (newsock != -1) {
+        
+        /* Set the socket to nonblocking mode */
+        flags = fcntl(sockfd, F_GETFL, 0);
+        err = fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+        if (err == -1) {
+            throw ListenerException("Failed to set new socket to nonblocking mode");
+        }
+
         callback(new Connection(newsock));
+        
         newsock = accept(sockfd, NULL, NULL);
     }
 
