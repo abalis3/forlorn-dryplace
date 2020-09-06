@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <iostream>
+#include <chrono>
 
 #include "SessionList.h"
 
@@ -67,7 +68,14 @@ int main()
     
     sessions = new SessionList();
 
+    auto lastTime = std::chrono::high_resolution_clock::now();
     while (running) {
+
+        /* Update the elapsed time for this loop for polling */
+        auto elapsedTime = std::chrono::high_resolution_clock::now() - lastTime;
+        double elapsedSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsedTime).count() / 1000000000.0d;
+        lastTime += std::chrono::nanoseconds((uint64_t) (1000000000 * elapsedSecs));
+
         listener->poll();
         Session *sess = sessions->getFirst();
         if (sess == nullptr) {
@@ -76,7 +84,7 @@ int main()
         while (sess != nullptr) {
             Connection *conn = sess->getConnection();
             if (conn != nullptr) {
-                conn->poll(1.0);
+                conn->poll(elapsedSecs);
             }
             sess = sess->getNext();
         }
