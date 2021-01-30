@@ -2,7 +2,7 @@
 #include "pbuf/generated/NetworkMessage.pb.h"
 
 //#define SERVER_ADDR "127.0.0.1"
-#define SERVER_ADDR "193.161.193.99"
+#define SERVER_ADDR "73.14.227.12"
 #define SERVER_PORT 47411
 
 /* For std::bind _1, _2 ... */
@@ -31,7 +31,7 @@ void ServerSession::registerCallback(std::function<void(Event)> cb)
 void ServerSession::open(std::string name)
 {
     /* Create a connection if not yet done */
-    if (connection == nullptr){
+    if (connection == nullptr) {
 
         ConnectionCallbacks cbs = {
             std::bind(&ServerSession::onConnectSuccess, this, _1),
@@ -53,6 +53,15 @@ void ServerSession::open(std::string name)
     } else {
         this->name = name;
         sendNameRequest();
+    }
+}
+
+void ServerSession::close()
+{
+    /* Kill the connection, which will delete the session as well */
+    if (connection != nullptr) {
+        delete connection;
+        connection = nullptr;
     }
 }
 

@@ -157,6 +157,7 @@ class MainMenu : public Scene {
         SHOW_TOPLEVEL,
         SHOW_SETTINGS,
         SHOW_ONLINE_NAME_INPUT,
+        SHOW_HOST_JOIN,
     };
 
     /* Stores the current State being shown by the menu */
@@ -227,6 +228,9 @@ class MainMenu : public Scene {
 
     /* Stopwatch to count how long loading wheel has been spinning */
     float nameSubmitStopwatch;
+
+    /* Zoom selector for host/join screen options */
+    ZoomSelector *hostJoinZoomSel;
 
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);
