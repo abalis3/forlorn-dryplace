@@ -66,6 +66,10 @@ static const float OL_NAME_SUBMIT_MIN_LOAD_TIME = 1.0;
 static const float OL_NAME_TB_ERROR_TL_HEIGHT_PCT = 0.04; /* Pct of screen ht = height of tl */
 static const float OL_NAME_TB_ERROR_TL_TOP_POS = 0.68; /* Pct of screen ht = y coord of top of tl */
 
+/* Host/join zoom selector parameters */
+static const float HOST_JOIN_ZS_TOP_POS = 0.45;
+static const float HOST_JOIN_ZS_BOT_POS = 0.89;
+
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
 static const raylib::Rectangle ZS_TEXT_PLAY_LOCAL_GAME(0, 0, 894, 137);
@@ -75,6 +79,8 @@ static const raylib::Rectangle ZS_TEXT_EXIT(0, 411, 189, 137);
 static const raylib::Rectangle ZS_TEXT_APPLY(0, 548, 295, 137);
 static const raylib::Rectangle ZS_TEXT_BACK(0, 685, 232, 137);
 static const raylib::Rectangle ZS_TEXT_SUBMIT(0, 822, 384, 137);
+static const raylib::Rectangle ZS_TEXT_HOST_GAME(0, 959, 541, 137);
+static const raylib::Rectangle ZS_TEXT_JOIN_GAME(0, 1096, 518, 137);
 
 /* Definitions for positions of particular entries on SelectableButton texture */
 static const raylib::Rectangle SB_WINDOWED_UNSELECTED(0, 0, 788, 192);
@@ -173,6 +179,14 @@ MainMenu::MainMenu(Window &window)
     /* Initialize online name input submenu textbox and loading spinner */
     olNameTextBox = new MenuTextBox(OL_NAME_TB_MAX_CHARS);
     olNameLoadSpinner = new LoadingSpinner();
+
+    /* Initialize host/join submenu zoom selector */
+    hostJoinZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    hostJoinZoomSel->addItem(ZS_TEXT_HOST_GAME, ZS_TEXT_CENTER_Y);
+    hostJoinZoomSel->addItem(ZS_TEXT_JOIN_GAME, ZS_TEXT_CENTER_Y);
+    hostJoinZoomSel->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
+    hostJoinZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    hostJoinZoomSel->setDependentOpacity(0);
 }
 
 MainMenu::~MainMenu()
@@ -190,6 +204,7 @@ MainMenu::~MainMenu()
     delete olNameTextBox;
     delete olNameSubmitZoomSel;
     delete olNameBackZoomSel;
+    delete hostJoinZoomSel;
     delete session;
 }
 
@@ -385,6 +400,12 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     olNameTextBox->setSize(getHeight() * OL_NAME_TB_WIDTH_PCT, getHeight() * OL_NAME_TB_HEIGHT_PCT);
     olNameTextBox->setX((getWidth() - olNameTextBox->getWidth()) / 2);
     olNameTextBox->setY(getHeight() * OL_NAME_TB_TOP_POS);
+
+    /* Update host/join ZoomSelector size params */
+    zoomSelHeight = (HOST_JOIN_ZS_BOT_POS - HOST_JOIN_ZS_TOP_POS) * getHeight();
+    zoomSelYPos = ((HOST_JOIN_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
+    zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
+    hostJoinZoomSel->updatePosition(zoomSelHeight, getWidth() / 2, zoomSelYPos, zoomSelItemPadding);
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -455,6 +476,9 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
             olNameSubmitZoomSel->onMousePressed();
             olNameBackZoomSel->onMousePressed();
             break;
+        case State::SHOW_HOST_JOIN:
+            hostJoinZoomSel->onMousePressed();
+            break;
         case State::FADE_TRANSITION:
             break;
         }
@@ -488,9 +512,6 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Play Online */
         case 1:
-            olNameLoading = false;
-            olNameTextBox->setEnabled(true);
-            olNameSubmitZoomSel->setEnabled(true);
             initiateFadeToState(State::SHOW_ONLINE_NAME_INPUT);
             break;
 
@@ -532,6 +553,26 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
     } else if (source == olNameBackZoomSel) {
         /* Handle click for "back" on online name selection screen */
         initiateFadeToState(State::SHOW_TOPLEVEL);
+    } else if (source == hostJoinZoomSel) {
+        /* Handle click for host/join screen zoom selector */
+        switch(index) {
+
+        /* Host */
+        case 0:
+            break;
+
+        /* Join */
+        case 1:
+            break;
+
+        /* Back */
+        case 2:
+            initiateFadeToState(State::SHOW_ONLINE_NAME_INPUT);
+            break;
+
+        default:
+            break;
+        }
     }
 }
 
@@ -551,6 +592,10 @@ void MainMenu::initiateFadeToState(State nextState)
     case State::SHOW_ONLINE_NAME_INPUT:
         olNameShowTakenErr = false;
         olNameShowConnectErr = false;
+        session->close();
+        olNameLoading = false;
+        olNameTextBox->setEnabled(true);
+        olNameSubmitZoomSel->setEnabled(true);
         break;
 
     default:
@@ -586,6 +631,11 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
         olNameLoadSpinner->setDependentOpacity(opacity);
         olNameSubmitZoomSel->setDependentOpacity(opacity);
         olNameBackZoomSel->setDependentOpacity(opacity);
+        break;
+
+    case State::SHOW_HOST_JOIN:
+        hostJoinZoomSel->setDependentOpacity(opacity);
+        break;
 
     default:
         break;
@@ -623,6 +673,12 @@ void MainMenu::updateForState(State menuState, double secs)
             }
         }
 
+        break;
+
+    case State::SHOW_HOST_JOIN:
+        hostJoinZoomSel->update(secs);
+        break;
+
     default:
         break;
     }
@@ -645,6 +701,11 @@ void MainMenu::updateMousePosForState(State menuState, const raylib::Vector2 &po
     case State::SHOW_ONLINE_NAME_INPUT:
         olNameSubmitZoomSel->onMousePosUpdate(pos);
         olNameBackZoomSel->onMousePosUpdate(pos);
+        break;
+
+    case State::SHOW_HOST_JOIN:
+        hostJoinZoomSel->onMousePosUpdate(pos);
+        break;
 
     default:
         break;
@@ -690,7 +751,11 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
                     olNameTLOpacity);
         }
         break;
-    
+
+    case State::SHOW_HOST_JOIN:
+        hostJoinZoomSel->render(renderer);
+        break;
+
     default:
         break;
     }
@@ -741,7 +806,7 @@ void MainMenu::handleNameSubmissionResult()
         break;
 
     case ServerSession::Event::NAME_ACCEPTED:
-        initiateFadeToState(State::SHOW_TOPLEVEL);
+        initiateFadeToState(State::SHOW_HOST_JOIN);
         break;
 
     default:

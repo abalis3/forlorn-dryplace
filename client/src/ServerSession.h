@@ -37,6 +37,9 @@ class ServerSession {
     /* Attempt to open a server session using the given name */
     void open(std::string name);
 
+    /* End any existing session with the server (releasing name) and close any connection */
+    void close();
+
     /* Poll events for this ServerSession. Should be called regularly */
     void poll(double secs);
 
