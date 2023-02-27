@@ -93,10 +93,11 @@ int main()
         }
         while (sess != nullptr) {
             Connection *conn = sess->getConnection();
+            /* Once we poll the conn, we can't use sess anymore (could have been destroyed), so last use of it is here */
+            sess = sess->getNext();
             if (conn != nullptr) {
                 conn->poll(elapsedSecs);
             }
-            sess = sess->getNext();
         }
     }
 
