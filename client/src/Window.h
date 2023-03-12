@@ -1,7 +1,7 @@
 #ifndef FD__WINDOW_H
 #define FD__WINDOW_H
 
-#include <raylib/raylib.hpp>
+#include <raylib/raylib-cpp.hpp>
 
 #include "Scene.h"
 

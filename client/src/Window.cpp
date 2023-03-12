@@ -107,12 +107,12 @@ Window::~Window()
 
 int Window::getWidth()
 {
-    return raylibWindow->GetScreenWidth();
+    return raylibWindow->GetWidth();
 }
 
 int Window::getHeight()
 {
-    return raylibWindow->GetScreenHeight();
+    return raylibWindow->GetHeight();
 }
 
 int Window::getFPS()

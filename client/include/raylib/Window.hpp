@@ -1,145 +1,409 @@
-#ifndef RAYLIB_CPP_WINDOW_HPP_
-#define RAYLIB_CPP_WINDOW_HPP_
+#ifndef RAYLIB_CPP_INCLUDE_WINDOW_HPP_
+#define RAYLIB_CPP_INCLUDE_WINDOW_HPP_
 
 #include <string>
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-#include "raylib.h"
-#ifdef __cplusplus
-}
-#endif
+#include "./raylib.hpp"
+#include "./RaylibException.hpp"
+#include "./Vector2.hpp"
 
 namespace raylib {
-	class Window {
-	public:
-		Window(int width = 800, int height = 450, const std::string& title = "raylib", bool lateInit = false) {
-			if (!lateInit) {
-				Init(width, height, title);
-			}
-		};
+/**
+ * Window and Graphics Device Functions.
+ */
+class Window {
+ public:
+    /**
+     * Build a Window object, but defer the initialization. Ensure you call Init() manually.
+     *
+     * @see Init()
+     */
+    Window() {
+        // Nothing.
+    }
 
-		~Window() {
-			Close();
-		};
+    /**
+     * Initialize window and OpenGL context.
+     *
+     * @throws raylib::RaylibException Thrown if the window failed to initiate.
+     */
+    Window(int width, int height, const std::string& title = "raylib") {
+        Init(width, height, title);
+    }
 
-		void Init(int width, int height, const std::string& title) {
-			::InitWindow(width, height, title.c_str());
-		}
+    /**
+     * Close window and unload OpenGL context
+     */
+    ~Window() {
+        Close();
+    }
 
-		inline bool ShouldClose() {
-			return ::WindowShouldClose();
-		};
+    /**
+     * Initializes the window.
+     *
+     * @throws raylib::RaylibException Thrown if the window failed to initiate.
+     */
+    inline void Init(int width = 800, int height = 450, const std::string& title = "raylib") {
+        ::InitWindow(width, height, title.c_str());
+        if (!IsWindowReady()) {
+            throw RaylibException("Failed to create Window");
+        }
+    }
 
-		inline void Close() {
-			::CloseWindow();
-		};
+    /**
+     * Check if KEY_ESCAPE pressed or Close icon pressed
+     */
+    inline bool ShouldClose() const {
+        return ::WindowShouldClose();
+    }
 
-		inline static bool IsReady() {
-			return ::IsWindowReady();
-		};
-		inline bool IsMinimized() {
-			return ::IsWindowMinimized();
-		}
-		inline bool IsResized() {
-			return ::IsWindowResized();
-		}
-		inline bool IsHidden() {
-			return ::IsWindowHidden();
-		}
+    /**
+     * Close window and unload OpenGL context
+     */
+    inline void Close() {
+        if (::IsWindowReady()) {
+            ::CloseWindow();
+        }
+    }
 
-		inline bool IsFullscreen() {
-			return ::IsWindowFullscreen();
-		}
-		inline Window& ToggleFullscreen() {
-			::ToggleFullscreen();
-			return *this;
-		}
-		inline Window& Unhide() {
-			::UnhideWindow();
-			return *this;
-		}
-		inline Window& Hide() {
-			::HideWindow();
-			return *this;
-		}
-		inline Window& SetIcon(Image image) {
-			::SetWindowIcon(image);
-			return *this;
-		}
-		inline Window& SetTitle(const std::string& title) {
-			::SetWindowTitle(title.c_str());
-			return *this;
-		}
-		inline Window& SetPosition(int x, int y) {
-			::SetWindowPosition(x, y);
-			return *this;
-		}
-		inline Window& SetMonitor(int monitor) {
-			::SetWindowMonitor(monitor);
-			return *this;
-		}
-		inline Window& SetMinSize(int width, int height) {
-			::SetWindowMinSize(width, height);
-			return *this;
-		}
-		inline Window& SetSize(int width, int height) {
-			::SetWindowSize(width, height);
-			return *this;
-		}
-		inline void* GetHandle() {
-			return ::GetWindowHandle();
-		}
+    /**
+     * Check if cursor is on the current screen
+     */
+    inline bool IsCursorOnScreen() const {
+        return ::IsCursorOnScreen();
+    }
 
-		inline Window& BeginDrawing() {
-			::BeginDrawing();
-			return *this;
-		}
-		inline Window& EndDrawing() {
-			::EndDrawing();
-			return *this;
-		}
+    /**
+     * Check if window has been initialized successfully
+     */
+    inline static bool IsReady() {
+        return ::IsWindowReady();
+    }
 
-		inline int GetScreenWidth() {
-			return ::GetScreenWidth();
-		}
+    /**
+     * Check if window is currently fullscreen
+     */
+    inline bool IsFullscreen() const {
+        return ::IsWindowFullscreen();
+    }
 
-		inline int GetScreenHeight() {
-			return ::GetScreenHeight();
-		}
+    /**
+     * Check if window is currently hidden
+     */
+    inline bool IsHidden() const {
+        return ::IsWindowHidden();
+    }
 
-		inline Vector2 GetWindowPosition() {
-			return ::GetWindowPosition();
-		}
+    /**
+     * Check if window is currently minimized
+     */
+    inline bool IsMinimized() const {
+        return ::IsWindowMinimized();
+    }
 
-		std::string GetMonitorName(int monitor) {
-			return std::string(::GetMonitorName(monitor));
-		}
+    /**
+     * Check if window is currently minimized
+     */
+    inline bool IsMaximized() const {
+        return ::IsWindowMaximized();
+    }
 
-		std::string GetClipboardText() {
-			return std::string(::GetClipboardText());
-		}
+    /**
+     * Check if window is currently focused
+     */
+    inline bool IsFocused() const {
+        return ::IsWindowFocused();
+    }
 
-		inline Window& SetClipboardText(const std::string& text) {
-			::SetClipboardText(text.c_str());
-			return *this;
-		}
+    /**
+     * Check if window has been resized last frame
+     */
+    inline bool IsResized() const {
+        return ::IsWindowResized();
+    }
 
-		inline Window& SetTargetFPS(int fps) {
-			::SetTargetFPS(fps);
-			return *this;
-		}
-		inline int GetFPS() {
-			return ::GetFPS();
-		}
-		inline float GetFrameTime() {
-			return ::GetFrameTime();
-		}
-		inline double GetTime() {
-			return ::GetTime();
-		}
-	};
-}
+    /**
+     * Check if one specific window flag is enabled
+     */
+    inline bool IsState(unsigned int flag) const {
+        return ::IsWindowState(flag);
+    }
 
-#endif
+    /**
+     * Set window configuration state using flags
+     */
+    inline Window& SetState(unsigned int flag) {
+        ::SetWindowState(flag);
+        return *this;
+    }
+
+    /**
+     * Clear window configuration state flags
+     */
+    inline Window& ClearState(unsigned int flag) {
+        ::ClearWindowState(flag);
+        return *this;
+    }
+
+    /**
+     * Clear window with given color.
+     */
+    inline Window& ClearBackground(const ::Color& color = BLACK) {
+        ::ClearBackground(color);
+        return *this;
+    }
+
+    /**
+     * Toggle window state: fullscreen/windowed
+     */
+    inline Window& ToggleFullscreen() {
+        ::ToggleFullscreen();
+        return *this;
+    }
+
+    /**
+     * Set whether or not the application should be fullscreen.
+     */
+    inline Window& SetFullscreen(bool fullscreen) {
+        if (fullscreen) {
+            if (!IsFullscreen()) {
+                ToggleFullscreen();
+            }
+        } else {
+            if (IsFullscreen()) {
+                ToggleFullscreen();
+            }
+        }
+
+        return *this;
+    }
+
+    /**
+     * Set window state: maximized, if resizable (only PLATFORM_DESKTOP)
+     */
+    inline Window& Maximize() {
+        ::MaximizeWindow();
+        return *this;
+    }
+
+    /**
+     * Set window state: minimized, if resizable (only PLATFORM_DESKTOP)
+     */
+    inline Window& Minimize() {
+        ::MinimizeWindow();
+        return *this;
+    }
+
+    /**
+     * Set window state: not minimized/maximized (only PLATFORM_DESKTOP)
+     */
+    inline Window& Restore() {
+        ::RestoreWindow();
+        return *this;
+    }
+
+    /**
+     * Set icon for window
+     */
+    inline Window& SetIcon(const ::Image& image) {
+        ::SetWindowIcon(image);
+        return *this;
+    }
+
+    /**
+     * Set title for window
+     */
+    inline Window& SetTitle(const std::string& title) {
+        ::SetWindowTitle(title.c_str());
+        return *this;
+    }
+
+    /**
+     * Set window position on screen
+     */
+    inline Window& SetPosition(int x, int y) {
+        ::SetWindowPosition(x, y);
+        return *this;
+    }
+
+    /**
+     * Set window position on screen
+     */
+    inline Window& SetPosition(const ::Vector2& position) {
+        return SetPosition(static_cast<int>(position.x), static_cast<int>(position.y));
+    }
+
+    /**
+     * Set monitor for the current window
+     */
+    inline Window& SetMonitor(int monitor) {
+        ::SetWindowMonitor(monitor);
+        return *this;
+    }
+
+    /**
+     * Set window minimum dimensions
+     */
+    inline Window& SetMinSize(int width, int height) {
+        ::SetWindowMinSize(width, height);
+        return *this;
+    }
+
+    /**
+     * Set window minimum dimensions
+     */
+    inline Window& SetMinSize(const ::Vector2& size) {
+        ::SetWindowMinSize(static_cast<int>(size.x), static_cast<int>(size.y));
+        return *this;
+    }
+
+    /**
+     * Set window dimensions
+     */
+    inline Window& SetSize(int width, int height) {
+        ::SetWindowSize(width, height);
+        return *this;
+    }
+
+    /**
+     * Set window opacity [0.0f..1.0f] (only PLATFORM_DESKTOP)
+     */
+    inline Window& SetOpacity(float opacity) {
+        ::SetWindowOpacity(opacity);
+        return *this;
+    }
+
+    /**
+     * Set window dimensions
+     */
+    inline Window& SetSize(const ::Vector2& size) {
+        return SetSize(static_cast<int>(size.x), static_cast<int>(size.y));
+    }
+
+    /**
+     * Get the screen's width and height.
+     */
+    inline Vector2 GetSize() const {
+        return {static_cast<float>(GetWidth()), static_cast<float>(GetHeight())};
+    }
+
+    /**
+     * Get native window handle
+     */
+    inline void* GetHandle() const {
+        return ::GetWindowHandle();
+    }
+
+    /**
+     * Setup canvas (framebuffer) to start drawing
+     */
+    inline Window& BeginDrawing() {
+        ::BeginDrawing();
+        return *this;
+    }
+
+    /**
+     * End canvas drawing and swap buffers (double buffering)
+     */
+    inline Window& EndDrawing() {
+        ::EndDrawing();
+        return *this;
+    }
+
+    /**
+     * Get current screen width
+     */
+    inline int GetWidth() const {
+        return ::GetScreenWidth();
+    }
+
+    /**
+     * Get current screen height
+     */
+    inline int GetHeight() const {
+        return ::GetScreenHeight();
+    }
+
+    /**
+     * Get current render width (it considers HiDPI)
+     */
+    inline int GetRenderWidth() const {
+        return ::GetRenderWidth();
+    }
+
+    /**
+     * Get current render height (it considers HiDPI)
+     */
+    inline int GetRenderHeight() const {
+        return ::GetRenderHeight();
+    }
+
+    /**
+     * Get window position XY on monitor
+     */
+    inline Vector2 GetPosition() const {
+        return ::GetWindowPosition();
+    }
+
+    /**
+     * Get window scale DPI factor
+     */
+    inline Vector2 GetScaleDPI() const {
+        return ::GetWindowScaleDPI();
+    }
+
+    /**
+     * Set clipboard text content
+     */
+    inline void SetClipboardText(const std::string& text) {
+        ::SetClipboardText(text.c_str());
+    }
+
+    /**
+     * Get clipboard text content
+     */
+    inline const std::string GetClipboardText() {
+        return ::GetClipboardText();
+    }
+
+    /**
+     * Set target FPS (maximum)
+     */
+    inline Window& SetTargetFPS(int fps) {
+        ::SetTargetFPS(fps);
+        return *this;
+    }
+
+    /**
+     * Returns current FPS
+     */
+    inline int GetFPS() const {
+        return ::GetFPS();
+    }
+
+    /**
+     * Draw current FPS
+     */
+    inline void DrawFPS(int posX = 10, int posY = 10) const {
+        ::DrawFPS(posX, posY);
+    }
+
+    /**
+     * Returns time in seconds for last frame drawn
+     */
+    inline float GetFrameTime() const {
+        return ::GetFrameTime();
+    }
+
+    /**
+     * Returns elapsed time in seconds since InitWindow()
+     */
+    inline double GetTime() const {
+        return ::GetTime();
+    }
+};
+}  // namespace raylib
+
+using RWindow = raylib::Window;
+
+#endif  // RAYLIB_CPP_INCLUDE_WINDOW_HPP_

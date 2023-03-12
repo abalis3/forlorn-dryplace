@@ -1,40 +1,15 @@
-#ifndef RAYLIB_CPP_RAYLIB_CPP_HPP_
-#define RAYLIB_CPP_RAYLIB_CPP_HPP_
+/**
+ * C++ header to wrap raylib.h.
+ */
+#ifndef RAYLIB_CPP_INCLUDE_RAYLIB_HPP_
+#define RAYLIB_CPP_INCLUDE_RAYLIB_HPP_
 
-#define UnhideWindow ray_disabled_UnhideWindow
-#define ShowCursor ray_disabled_ShowCursor
-
-#include "AudioDevice.hpp"
-#include "AudioStream.hpp"
-#include "BoundingBox.hpp"
-#include "Camera2D.hpp"
-#include "Camera3D.hpp"
-#include "Color.hpp"
-#include "Font.hpp"
-#include "Gamepad.hpp"
-#include "Image.hpp"
-#include "Material.hpp"
-#include "Matrix.hpp"
-#include "Mesh.hpp"
-#include "ModelAnimation.hpp"
-#include "Mouse.hpp"
-#include "Model.hpp"
-#include "Music.hpp"
-#include "RayHitInfo.hpp"
-#include "Ray.hpp"
-#include "Rectangle.hpp"
-#include "RenderTexture2D.hpp"
-#include "Shader.hpp"
-#include "Sound.hpp"
-#include "Texture2D.hpp"
-#include "Vector2.hpp"
-#include "Vector3.hpp"
-#include "Vector4.hpp"
-#include "VrSimulator.hpp"
-#include "Wave.hpp"
-#include "Window.hpp"
-
-#undef UnhideWindow
-#undef ShowCursor
-
+#ifdef __cplusplus
+extern "C" {
 #endif
+#include "raylib.h" // NOLINT
+#ifdef __cplusplus
+}
+#endif
+
+#endif  // RAYLIB_CPP_INCLUDE_RAYLIB_HPP_
