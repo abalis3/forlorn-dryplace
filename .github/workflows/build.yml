@@ -15,7 +15,7 @@ jobs:
       with:
         submodules: true
     - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v10
+      uses: lukka/run-vcpkg@v2
       with:
         vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
@@ -42,7 +42,7 @@ jobs:
     - name: Install Package Manager Deps
       run: ./scripts/installLinuxDependencies.sh
     - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v10
+      uses: lukka/run-vcpkg@v2
       with:
         vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
@@ -65,7 +65,7 @@ jobs:
       with:
         submodules: true
     - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v10
+      uses: lukka/run-vcpkg@v2
       with:
         vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
@@ -90,7 +90,7 @@ jobs:
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v1.3.1
     - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v10
+      uses: lukka/run-vcpkg@v2
       with:
         vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
