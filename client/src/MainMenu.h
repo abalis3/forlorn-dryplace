@@ -232,6 +232,12 @@ class MainMenu : public Scene {
     /* Zoom selector for host/join screen options */
     ZoomSelector *hostJoinZoomSel;
 
+    /* Bool to track whether the conn is suspended and we are trying to reconnect */
+    bool reconnecting;
+
+    /* LoadingSpinner shown when connection suspended and trying to reconnect */
+    LoadingSpinner *reconLoadSpinner;
+
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);
 

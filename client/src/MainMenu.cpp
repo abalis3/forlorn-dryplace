@@ -70,6 +70,10 @@ static const float OL_NAME_TB_ERROR_TL_TOP_POS = 0.68; /* Pct of screen ht = y c
 static const float HOST_JOIN_ZS_TOP_POS = 0.45;
 static const float HOST_JOIN_ZS_BOT_POS = 0.89;
 
+/* Overlay for 'reconnecting' parameters */
+static const float RECON_LS_VERT_POS = 0.50; /* Pct of screen height = y coord of ctr pt of ls */
+static const float RECON_LS_SIZE_PCT = 0.16; /* Pct of screen height = size of ls */
+
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
 static const raylib::Rectangle ZS_TEXT_PLAY_LOCAL_GAME(0, 0, 894, 137);
@@ -110,6 +114,7 @@ MainMenu::MainMenu(Window &window)
     olNameSubmitResult = ServerSession::Event::NONE;
     olNameShowConnectErr = false;
     olNameShowTakenErr = false;
+    reconnecting = false;
 
     /* Create the ServerSession for use with online communication */
     session = new ServerSession();
@@ -187,6 +192,9 @@ MainMenu::MainMenu(Window &window)
     hostJoinZoomSel->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
     hostJoinZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     hostJoinZoomSel->setDependentOpacity(0);
+
+    /* Initialize objects for 'reconnecting' overlay */
+    reconLoadSpinner = new LoadingSpinner();
 }
 
 MainMenu::~MainMenu()
@@ -210,31 +218,33 @@ MainMenu::~MainMenu()
 
 void MainMenu::update(double secs)
 {
-    /* Update velocity of background */
-    float bgVelocity = bgSrcXPosIncreasing ? 1 : -1;
-    if (bgSrcXPercent < BG_SPEED_CUTOFF) {
-        /* Slowing down with x pos percent close to 0 */
-        bgVelocity *= BG_MIN_SPEED + (bgSrcXPercent / BG_SPEED_CUTOFF) *
-                (BG_MAX_SPEED - BG_MIN_SPEED);
-    } else if (bgSrcXPercent > (1 - BG_SPEED_CUTOFF)) {
-        /* Slowing down with x pos percent close to 1 */
-        bgVelocity *= BG_MIN_SPEED + ((1 - bgSrcXPercent) / BG_SPEED_CUTOFF) *
-                (BG_MAX_SPEED - BG_MIN_SPEED);
-    } else {
-        /* Going full speed between the upper and lower cutoffs */
-        bgVelocity *= BG_MAX_SPEED;
-    }
+    if (!reconnecting) {
+        /* Update velocity of background */
+        float bgVelocity = bgSrcXPosIncreasing ? 1 : -1;
+        if (bgSrcXPercent < BG_SPEED_CUTOFF) {
+            /* Slowing down with x pos percent close to 0 */
+            bgVelocity *= BG_MIN_SPEED + (bgSrcXPercent / BG_SPEED_CUTOFF) *
+                    (BG_MAX_SPEED - BG_MIN_SPEED);
+        } else if (bgSrcXPercent > (1 - BG_SPEED_CUTOFF)) {
+            /* Slowing down with x pos percent close to 1 */
+            bgVelocity *= BG_MIN_SPEED + ((1 - bgSrcXPercent) / BG_SPEED_CUTOFF) *
+                    (BG_MAX_SPEED - BG_MIN_SPEED);
+        } else {
+            /* Going full speed between the upper and lower cutoffs */
+            bgVelocity *= BG_MAX_SPEED;
+        }
 
-    /* Update position of background */
-    bgSrcXPercent += bgVelocity * secs;
-    if (bgSrcXPercent > 1) {
-        bgSrcXPercent = 1;
-        bgSrcXPosIncreasing = false;
-    } else if (bgSrcXPercent < 0) {
-        bgSrcXPercent = 0;
-        bgSrcXPosIncreasing = true;
+        /* Update position of background */
+        bgSrcXPercent += bgVelocity * secs;
+        if (bgSrcXPercent > 1) {
+            bgSrcXPercent = 1;
+            bgSrcXPosIncreasing = false;
+        } else if (bgSrcXPercent < 0) {
+            bgSrcXPercent = 0;
+            bgSrcXPosIncreasing = true;
+        }
+        bgSrcXPos = bgSrcXMax * bgSrcXPercent;
     }
-    bgSrcXPos = bgSrcXMax * bgSrcXPercent;
 
     /* Poll online session */
     session->poll(secs);
@@ -289,8 +299,10 @@ void MainMenu::render(Renderer *renderer)
     /* Render background and title which are always present */
     renderer->drawTexture(bgTexture, bgSrcXPos, 0, bgSrcWidth,
             bgTexture->GetHeight(), 0, 0, getWidth(), getHeight());
-    renderer->drawTexture(titleTexture, titleXPos, titleYPos, titleWidth,
-            titleHeight, titleOpacity);
+    if (!reconnecting) {
+        renderer->drawTexture(titleTexture, titleXPos, titleYPos, titleWidth,
+                titleHeight, titleOpacity);
+    }
 
     switch (currentState) {
     
@@ -406,6 +418,11 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     zoomSelYPos = ((HOST_JOIN_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
     zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
     hostJoinZoomSel->updatePosition(zoomSelHeight, getWidth() / 2, zoomSelYPos, zoomSelItemPadding);
+
+    /* Update 'reconnecting' overlay size params */
+    reconLoadSpinner->setSize(getHeight() * RECON_LS_SIZE_PCT);
+    reconLoadSpinner->setY(getHeight() * RECON_LS_VERT_POS);
+    reconLoadSpinner->setX(getWidth() / 2);
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -426,6 +443,12 @@ void MainMenu::calculateTitleSizeParams()
 
 void MainMenu::onMousePosUpdate(const raylib::Vector2 &pos)
 {
+    if (reconnecting) {
+        /* Don't update mouse pos if reconnecting */
+        /* TODO will this remember the last mouse pos for things like ZS? */
+        return;
+    }
+
     switch (currentState) {
     
     case State::INITIAL_FADE:
@@ -455,6 +478,11 @@ void MainMenu::setWindowRequestCallback(std::function<void(const WindowConfigura
 
 void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
 {
+    if (reconnecting) {
+        /* Don't allow mouse presses if reconnecting */
+        return;
+    }
+
     /* Handle left button press event per state of the menu */
     if (button == MOUSE_LEFT_BUTTON) {
         switch (currentState) {
@@ -487,6 +515,11 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
 
 void MainMenu::onKeyPressed(int key)
 {
+    if (reconnecting) {
+        /* Don't allow keypresses if reconnecting */
+        return;
+    }
+
     switch(currentState) {
     case State::SHOW_ONLINE_NAME_INPUT:
         if (key == KEY_ENTER) {
@@ -559,6 +592,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Host */
         case 0:
+            reconnecting = true;
             break;
 
         /* Join */
@@ -644,6 +678,12 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
 
 void MainMenu::updateForState(State menuState, double secs)
 {
+    if (reconnecting) {
+        /* If reconnecting, pause other states processing */
+        reconLoadSpinner->update(secs);
+        return;
+    }
+
     switch(menuState) {
     
     case State::SHOW_TOPLEVEL:
@@ -759,6 +799,11 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
     default:
         break;
     }
+
+    if (reconnecting) {
+        /* If reconnecting, render additional content over the top */
+        reconLoadSpinner->render(renderer);
+    }
 }
 
 void MainMenu::onSessionEvent(ServerSession::Event event)
@@ -768,6 +813,19 @@ void MainMenu::onSessionEvent(ServerSession::Event event)
     case ServerSession::Event::NAME_ACCEPTED:
     case ServerSession::Event::NAME_REJECTED:
         olNameSubmitResult = event;
+        break;
+
+    case ServerSession::Event::CONNECTION_SUSPENDED:
+        reconnecting = true;
+        break;
+
+    case ServerSession::Event::CONNECTION_RESUMED:
+        reconnecting = false;
+        break;
+
+    case ServerSession::Event::CONNECTION_LOST:
+        reconnecting = false;
+        initiateFadeToState(State::SHOW_ONLINE_NAME_INPUT);
         break;
 
     default:
