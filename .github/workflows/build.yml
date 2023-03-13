@@ -6,30 +6,30 @@ on:
 
 jobs:
 
-  build-server:
-    runs-on: ubuntu-latest
+  # build-server:
+  #   runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout commit code
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v10.7
-      with:
-        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        vcpkgJsonGlob: '**/vcpkg.json'
-        runVcpkgInstall: true
-    - name: Build executable
-      run: ./linux-build.sh
-      working-directory: ./server
-    - name: Archive the image
-      run: docker save -o server-container-img.tar abalis3/forbidden-desert-server:local
-    - name: Upload image as build artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: server-container
-        path: server-container-img.tar
+  #   steps:
+  #   - name: Checkout commit code
+  #     uses: actions/checkout@v2
+  #     with:
+  #       submodules: true
+  #   - name: Grab or Build Vcpkg Deps
+  #     uses: lukka/run-vcpkg@v10.7
+  #     with:
+  #       vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+  #       vcpkgJsonGlob: '**/vcpkg.json'
+  #       runVcpkgInstall: true
+  #   - name: Build executable
+  #     run: ./linux-build.sh
+  #     working-directory: ./server
+  #   - name: Archive the image
+  #     run: docker save -o server-container-img.tar abalis3/forbidden-desert-server:local
+  #   - name: Upload image as build artifact
+  #     uses: actions/upload-artifact@v2
+  #     with:
+  #       name: server-container
+  #       path: server-container-img.tar
 
   build-linux:
     runs-on: ubuntu-latest
@@ -47,6 +47,12 @@ jobs:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
         vcpkgJsonGlob: '**/vcpkg.json'
         runVcpkgInstall: true
+    - name: List upper dir
+      run: ls -la ..
+      working-directory: ./client
+    - name: List upper dir 2
+      run: ls -la ../vcpkg_installed
+      working-directory: ./client
     - name: Build executable
       run: ./linux-build.sh
       working-directory: ./client
@@ -56,50 +62,50 @@ jobs:
         name: linux-executable
         path: client/bin/forbidden-desert
 
-  build-macos:
-    runs-on: macos-latest
+  # build-macos:
+  #   runs-on: macos-latest
 
-    steps:
-    - name: Checkout commit code
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v10.7
-      with:
-        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        vcpkgJsonGlob: '**/vcpkg.json'
-        runVcpkgInstall: true
-    - name: Build executable
-      run: ./mac-build.sh
-      working-directory: ./client
-    - name: Upload executable as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: macOS-executable
-        path: client/bin/forbidden-desert
+  #   steps:
+  #   - name: Checkout commit code
+  #     uses: actions/checkout@v2
+  #     with:
+  #       submodules: true
+  #   - name: Grab or Build Vcpkg Deps
+  #     uses: lukka/run-vcpkg@v10.7
+  #     with:
+  #       vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+  #       vcpkgJsonGlob: '**/vcpkg.json'
+  #       runVcpkgInstall: true
+  #   - name: Build executable
+  #     run: ./mac-build.sh
+  #     working-directory: ./client
+  #   - name: Upload executable as artifact
+  #     uses: actions/upload-artifact@v2
+  #     with:
+  #       name: macOS-executable
+  #       path: client/bin/forbidden-desert
 
-  build-windows:
-    runs-on: windows-latest
+  # build-windows:
+  #   runs-on: windows-latest
 
-    steps:
-    - name: Checkout commit code
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.3.1
-    - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v10.7
-      with:
-        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        vcpkgJsonGlob: '**/vcpkg.json'
-        runVcpkgInstall: true
-    - name: Build executable
-      run: ./win-build.bat
-      working-directory: ./client
-    - name: Upload executable as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: windows-build
-        path: client/bin/*
+  #   steps:
+  #   - name: Checkout commit code
+  #     uses: actions/checkout@v2
+  #     with:
+  #       submodules: true
+  #   - name: Add msbuild to PATH
+  #     uses: microsoft/setup-msbuild@v1.3.1
+  #   - name: Grab or Build Vcpkg Deps
+  #     uses: lukka/run-vcpkg@v10.7
+  #     with:
+  #       vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+  #       vcpkgJsonGlob: '**/vcpkg.json'
+  #       runVcpkgInstall: true
+  #   - name: Build executable
+  #     run: ./win-build.bat
+  #     working-directory: ./client
+  #   - name: Upload executable as artifact
+  #     uses: actions/upload-artifact@v2
+  #     with:
+  #       name: windows-build
+  #       path: client/bin/*
