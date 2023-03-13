@@ -50,6 +50,9 @@ jobs:
     - name: List upper dir
       run: ls -la ..
       working-directory: ./client
+    - name: List upper dir 3
+      run: ls -la ../vcpkg
+      working-directory: ./client
     - name: List upper dir 2
       run: ls -la ../vcpkg_installed
       working-directory: ./client
