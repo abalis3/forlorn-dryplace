@@ -20,6 +20,8 @@ jobs:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
         vcpkgJsonGlob: '**/vcpkg.json'
         runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
     - name: Build executable
       run: ./linux-build.sh
       working-directory: ./server
@@ -47,6 +49,8 @@ jobs:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
         vcpkgJsonGlob: '**/vcpkg.json'
         runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
     - name: Build executable
       run: ./linux-build.sh
       working-directory: ./client
@@ -70,6 +74,8 @@ jobs:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
         vcpkgJsonGlob: '**/vcpkg.json'
         runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
     - name: Build executable
       run: ./mac-build.sh
       working-directory: ./client
@@ -95,6 +101,8 @@ jobs:
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
         vcpkgJsonGlob: '**/vcpkg.json'
         runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
     - name: Build executable
       run: ./win-build.bat
       working-directory: ./client
