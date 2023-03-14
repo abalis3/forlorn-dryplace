@@ -112,6 +112,7 @@ jobs:
         runVcpkgInstall: true
       env:
         VCPKG_INSTALLED_DIR: vcpkg_installed/
+        VCPKG_DEFAULT_TRIPLET: x86-windows
     - name: Build executable
       run: ./win-build.bat
       working-directory: ./client
