@@ -24,8 +24,10 @@
 
 #if COMPILING_ON_WINDOWS
     #define CloseWindow win_disabled_CloseWindow
+    #define ShowCursor win_disabled_ShowCursor
     #include <winsock2.h>
     #undef CloseWindow
+    #undef ShowCursor
 #else
     #include <sys/socket.h>
     #include <netinet/in.h>
