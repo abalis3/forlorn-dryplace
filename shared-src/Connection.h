@@ -113,6 +113,9 @@ class Connection {
     /* Poll method for the connection. This should be called regularly with the time since last call */
     void poll(double secs);
 
+    /* Get the remaining time until a suspended connection is disconnected */
+    int getSuspendedTimeLeft();
+
 #if !COMPILING_ON_WINDOWS
     /* Get the peer ip address as a string for this connection */
     std::string getPeerIp();

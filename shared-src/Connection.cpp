@@ -29,7 +29,7 @@ static const float PING_PONG_TIME = 2.5;
  * How many seconds without receiving any messages from the remote before hard shutdown
  * of this connection. This should be a larger value than 2*PING_PONG_TIME.
  */
-static const float CLOSE_SUSPENDED_TIME = 60;
+static const float CLOSE_SUSPENDED_TIME = 120;
 
 /* Implementation for Connection class */
 
@@ -85,6 +85,9 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
 #endif
         throw ConnectionException("Failed to set socket to nonblocking mode");
     }
+
+    int maxrt = 2 * CLOSE_SUSPENDED_TIME;
+    setsockopt(sockfd, IPPROTO_TCP, TCP_MAXRT, (char*) &maxrt, sizeof(maxrt));
 
     err = connect(sockfd, (struct sockaddr *) &address, sizeof(address));
     if (err != 0) {
@@ -462,6 +465,20 @@ void Connection::poll(double secs)
 
     }
 }
+
+int Connection::getSuspendedTimeLeft()
+{
+    if (currentState != State::SUSPENDED) {
+        return CLOSE_SUSPENDED_TIME;
+    }
+
+    if (timer > CLOSE_SUSPENDED_TIME) {
+        return 0;
+    }
+
+    return (CLOSE_SUSPENDED_TIME - timer);
+}
+
 
 void Connection::setOnConnectionLostCallback(std::function<void(Connection*)> cb)
 {

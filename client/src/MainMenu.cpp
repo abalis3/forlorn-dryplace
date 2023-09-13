@@ -9,6 +9,12 @@ static const char TITLE_IMG_PATH[] = "MainMenu/main-title.png";
 static const char ZOOMSELECTOR_IMG_PATH[] = "MainMenu/zoomselector.png";
 static const char TEXT_LABEL_PATHS[] = "MainMenu/text-labels.png";
 static const char SELECTABLEBUTTON_IMG_PATH[] = "MainMenu/selectablebutton.png";
+static const char MARVEL_FONT_PATH[] = "Fonts/Marvel-Regular.ttf";
+static const char RECON_OVERLAY_BG_PATH[] = "recon-overlay-bg.png";
+static const char RECON_TEXT_PATH[] = "recon-text.png";
+
+/* Constants related to fonts */
+static const int BASE_FONT_SIZE = 175;
 
 /* Background pan animation parameters */
 static const float BG_MAX_SPEED = 0.02;
@@ -71,8 +77,15 @@ static const float HOST_JOIN_ZS_TOP_POS = 0.45;
 static const float HOST_JOIN_ZS_BOT_POS = 0.89;
 
 /* Overlay for 'reconnecting' parameters */
-static const float RECON_LS_VERT_POS = 0.50; /* Pct of screen height = y coord of ctr pt of ls */
-static const float RECON_LS_SIZE_PCT = 0.16; /* Pct of screen height = size of ls */
+static const float RECON_TEXT_TOP_POS = 0.25; /* Pct of screen height = y coord of top of text */
+static const float RECON_TEXT_HEIGHT_PCT = 0.06; /* Pct of screen height = height of text */
+static const float RECON_TIME_TOP_POS = 0.35; /* Pct of screen height = y of top of time text */
+static const float RECON_TIME_HEIGHT_PCT = 0.08; /* Pct of screen height = height of time text */
+static const float RECON_TIME_SPACE_PCT = 0.07; /* Pct of time text height = spacing b/t chars */
+static const float RECON_LS_VERT_POS = 0.53; /* Pct of screen height = y coord of ctr pt of ls */
+static const float RECON_LS_SIZE_PCT = 0.12; /* Pct of screen height = size of ls */
+
+/* TODO Fix size of gimp file for recon text. Made it way too big */
 
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -115,6 +128,10 @@ MainMenu::MainMenu(Window &window)
     olNameShowConnectErr = false;
     olNameShowTakenErr = false;
     reconnecting = false;
+
+    marvelFont = new raylib::Font(Util::formResourcePath(MARVEL_FONT_PATH), BASE_FONT_SIZE,
+            nullptr, 95);
+    GenTextureMipmaps(&marvelFont->texture);
 
     /* Create the ServerSession for use with online communication */
     session = new ServerSession();
@@ -195,6 +212,10 @@ MainMenu::MainMenu(Window &window)
 
     /* Initialize objects for 'reconnecting' overlay */
     reconLoadSpinner = new LoadingSpinner();
+    reconOverlayBgTexture = new raylib::Texture(Util::formResourcePath(RECON_OVERLAY_BG_PATH));
+    reconOverlayBgTexture->GenMipmaps();
+    reconTextTexture = new raylib::Texture(Util::formResourcePath(RECON_TEXT_PATH));
+    reconTextTexture->GenMipmaps();
 }
 
 MainMenu::~MainMenu()
@@ -203,6 +224,9 @@ MainMenu::~MainMenu()
     delete titleTexture;
     delete textLabelTexture;
     delete selButtonTexture;
+    delete reconOverlayBgTexture;
+    delete reconTextTexture;
+    delete marvelFont;
     delete toplevelZoomSel;
     delete windowedSelButton;
     delete fullscreenSelButton;
@@ -218,7 +242,24 @@ MainMenu::~MainMenu()
 
 void MainMenu::update(double secs)
 {
-    if (!reconnecting) {
+    /* Poll online session */
+    session->poll(secs);
+
+    if (reconnecting) {
+        
+        /* Updating remaining time until connection disconnected */
+        int newRemTime = session->getSuspendedTimeLeft();
+        if (newRemTime != reconLastRemTime) {
+            if ((newRemTime >= 0) && (newRemTime <= 120)) {
+                reconLastRemTime = newRemTime;
+                itoa(newRemTime, reconRemTime, 10);
+                calculateReconTimeTextSize(); /* Recalculate rendered size w/ new string */
+            } else {
+                reconRemTime[0] = '\0';
+            }
+        }
+
+    } else {
         /* Update velocity of background */
         float bgVelocity = bgSrcXPosIncreasing ? 1 : -1;
         if (bgSrcXPercent < BG_SPEED_CUTOFF) {
@@ -245,9 +286,6 @@ void MainMenu::update(double secs)
         }
         bgSrcXPos = bgSrcXMax * bgSrcXPercent;
     }
-
-    /* Poll online session */
-    session->poll(secs);
 
     switch (currentState) {
 
@@ -299,13 +337,10 @@ void MainMenu::render(Renderer *renderer)
     /* Render background and title which are always present */
     renderer->drawTexture(bgTexture, bgSrcXPos, 0, bgSrcWidth,
             bgTexture->GetHeight(), 0, 0, getWidth(), getHeight());
-    if (!reconnecting) {
-        renderer->drawTexture(titleTexture, titleXPos, titleYPos, titleWidth,
-                titleHeight, titleOpacity);
-    }
+    renderer->drawTexture(titleTexture, titleXPos, titleYPos, titleWidth,
+            titleHeight, titleOpacity);
 
     switch (currentState) {
-    
     case State::INITIAL_FADE:
         renderForState(State::SHOW_TOPLEVEL, renderer);
         break;
@@ -319,12 +354,27 @@ void MainMenu::render(Renderer *renderer)
         renderForState(currentState, renderer);
         break;
     }
+
+    if (reconnecting) {
+        /* If reconnecting, render additional content over the top */
+        renderer->drawTexture(reconOverlayBgTexture, 0, 0, getWidth(), getHeight(), 1.0f);
+        renderer->drawTexture(reconTextTexture, reconTextXPos, reconTextYPos, reconTextWidth,
+                reconTextHeight, 1.0f);
+        
+        renderer->setColor(WHITE);
+        renderer->drawText(*marvelFont, reconRemTime, (getWidth() - reconTimeRenderWidth) / 2,
+            getHeight() * RECON_TIME_TOP_POS, reconTimeFontSize,
+            reconTimeFontSize * RECON_TIME_SPACE_PCT, 1.0f);
+
+        reconLoadSpinner->render(renderer);
+    }
 }
 
 void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
 {
     calculateBgSizeParams();
     calculateTitleSizeParams();
+    calculateReconOverlaySizeParams();
 
     float zoomSelHeight, zoomSelYPos, zoomSelItemPadding;
     float textLabelHeight, textLabelMaxX;
@@ -439,6 +489,24 @@ void MainMenu::calculateTitleSizeParams()
     titleWidth = (titleHeight / titleTexture->GetHeight()) *
             titleTexture->GetWidth();
     titleXPos = (getWidth() - titleWidth) / 2;
+}
+
+void MainMenu::calculateReconOverlaySizeParams()
+{
+    reconTextYPos = getHeight() * RECON_TEXT_TOP_POS;
+    reconTextHeight = getHeight() * RECON_TEXT_HEIGHT_PCT;
+    reconTextWidth = (reconTextHeight / reconTextTexture->GetHeight()) *
+            reconTextTexture->GetWidth();
+    reconTextXPos = (getWidth() - reconTextWidth) / 2;
+
+    reconTimeFontSize = getHeight() * RECON_TIME_HEIGHT_PCT;
+    calculateReconTimeTextSize();
+}
+
+void MainMenu::calculateReconTimeTextSize()
+{
+    reconTimeRenderWidth = marvelFont->MeasureText(reconRemTime, reconTimeFontSize,
+            reconTimeFontSize * RECON_TIME_SPACE_PCT).GetX();
 }
 
 void MainMenu::onMousePosUpdate(const raylib::Vector2 &pos)
@@ -592,7 +660,6 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Host */
         case 0:
-            reconnecting = true;
             break;
 
         /* Join */
@@ -798,11 +865,6 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
 
     default:
         break;
-    }
-
-    if (reconnecting) {
-        /* If reconnecting, render additional content over the top */
-        reconLoadSpinner->render(renderer);
     }
 }
 

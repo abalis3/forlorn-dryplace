@@ -4,7 +4,7 @@
 
 static const char SPINNER_IMG_PATH[] = "LoadingSpinner/spinner.png";
 
-static const float ROTATION_SPEED = 275; /* Rotation speed in degrees per second */
+static const float ROTATION_SPEED = 250; /* Rotation speed in degrees per second */
 
 LoadingSpinner::LoadingSpinner()
 {

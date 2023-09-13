@@ -45,6 +45,9 @@ class ServerSession {
     /* Poll events for this ServerSession. Should be called regularly */
     void poll(double secs);
 
+    /* Get the remaining time until a suspended session is disconnected */
+    int getSuspendedTimeLeft();
+
  private:
 
     /* This is the connection instance used to communicate with the server */

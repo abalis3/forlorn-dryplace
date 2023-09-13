@@ -1,7 +1,7 @@
 #include "ServerSession.h"
 #include "pbuf/generated/NetworkMessage.pb.h"
 
-#define SERVER_ADDR "127.0.0.1"
+#define SERVER_ADDR "192.168.0.182"
 #define SERVER_PORT 47411
 
 /* For std::bind _1, _2 ... */
@@ -76,6 +76,16 @@ void ServerSession::poll(double secs)
     }
 }
 
+int ServerSession::getSuspendedTimeLeft()
+{
+    if (connection == nullptr) {
+        return 0;
+    }
+
+    return connection->getSuspendedTimeLeft();
+}
+
+
 void ServerSession::sendNameRequest()
 {
     requestingName = true;
@@ -116,7 +126,7 @@ void ServerSession::onConnectFail(Connection *conn)
 }
 
 void ServerSession::onConnectionLost(Connection *conn)
-{    
+{
     if (conn != connection) {
         /* This is probably bad... */
         return;
