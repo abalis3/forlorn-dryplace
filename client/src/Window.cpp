@@ -167,14 +167,6 @@ void Window::update(double secs)
             currentScene->onKeyPressed(key);
             key = GetKeyPressed();
         }
-
-        /* Special Keys Supported by keypress callback */
-        if (IsKeyPressed(KEY_BACKSPACE)) {
-            currentScene->onKeyPressed(KEY_BACKSPACE);
-        }
-        if (IsKeyPressed(KEY_ENTER)) {
-            currentScene->onKeyPressed(KEY_ENTER);
-        }
     }
 
     if (IsKeyPressed(KEY_F3)) {
