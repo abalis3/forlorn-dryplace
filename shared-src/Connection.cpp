@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <netinet/tcp.h>
 
 #endif
 
@@ -86,8 +87,19 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
         throw ConnectionException("Failed to set socket to nonblocking mode");
     }
 
-    int maxrt = 2 * CLOSE_SUSPENDED_TIME;
-    setsockopt(sockfd, IPPROTO_TCP, TCP_MAXRT, (char*) &maxrt, sizeof(maxrt));
+    /* Extend time connection can sit idle before being disconnected by OS */
+#if COMPILING_ON_WINDOWS
+    const int tcp_maxrt = 2 * CLOSE_SUSPENDED_TIME;
+    err = setsockopt(sockfd, IPPROTO_TCP, TCP_MAXRT, (char*) &maxrt, sizeof(maxrt));
+    if (err == SOCKET_ERROR) {
+#else
+    const unsigned int tcp_user_timeout = 2 * CLOSE_SUSPENDED_TIME * 1000; /* millis */
+    err = setsockopt(sockfd, IPPROTO_TCP, TCP_USER_TIMEOUT, &tcp_user_timeout,
+            sizeof(tcp_user_timeout));
+    if (err == -1) {
+#endif
+        throw ConnectionException("Failed to set custom TCP user timeout on socket");
+    }
 
     err = connect(sockfd, (struct sockaddr *) &address, sizeof(address));
     if (err != 0) {
@@ -529,6 +541,14 @@ Listener::Listener(uint16_t port, std::function<void(Connection*)> cb)
     err = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optVal, sizeof(optVal));
     if (err < 0) {
         throw ListenerException("Socket options set failed");
+    }
+
+    /* Ensure connections live long enough in idle state before OS kills them */
+    const unsigned int tcp_user_timeout = 2 * CLOSE_SUSPENDED_TIME * 1000; /* millis */
+    err = setsockopt(sockfd, IPPROTO_TCP, TCP_USER_TIMEOUT, &tcp_user_timeout,
+            sizeof(tcp_user_timeout));
+    if (err < 0) {
+        throw ListenerException("Socket option TCP_USER_TIMEOUT set failed");
     }
 
     struct sockaddr_in address = {
