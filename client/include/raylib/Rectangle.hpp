@@ -1,100 +1,161 @@
-#ifndef RAYLIB_CPP_RECTANGLE_HPP_
-#define RAYLIB_CPP_RECTANGLE_HPP_
+#ifndef RAYLIB_CPP_INCLUDE_RECTANGLE_HPP_
+#define RAYLIB_CPP_INCLUDE_RECTANGLE_HPP_
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-#include "raylib.h"
-#ifdef __cplusplus
-}
-#endif
-
-#include "utils.hpp"
-#include "Vector2.hpp"
+#include "./raylib.hpp"
+#include "./raylib-cpp-utils.hpp"
+#include "./Vector2.hpp"
 
 namespace raylib {
-	class Rectangle : public ::Rectangle {
-	public:
-		Rectangle(::Rectangle vec) {
-			set(vec);
-		};
-		Rectangle(float X = 0, float Y = 0, float Width = 0, float Height = 0) {
-			x = X;
-			y = Y;
-			width = Width;
-			height = Height;
-		};
+/**
+ * Rectangle type
+ */
+class Rectangle : public ::Rectangle {
+ public:
+    Rectangle(const ::Rectangle& rect) : ::Rectangle{rect.x, rect.y, rect.width, rect.height} {}
 
-		inline void set(::Rectangle rect) {
-			x = rect.x;
-			y = rect.y;
-			width = rect.width;
-			height = rect.height;
-		}
+    Rectangle(float x, float y, float width, float height) : ::Rectangle{x, y, width, height} {}
+    Rectangle(float x, float y, float width) : ::Rectangle{x, y, width, 0} {}
+    Rectangle(float x, float y) : ::Rectangle{x, y, 0, 0} {}
+    Rectangle(float x) : ::Rectangle{x, 0, 0, 0} {}
+    Rectangle() : ::Rectangle{0, 0, 0, 0} {}
 
-		GETTERSETTER(float,X,x)
-		GETTERSETTER(float,Y,y)
-		GETTERSETTER(float,Width,width)
-		GETTERSETTER(float,Height,height)
+    Rectangle(::Vector2 position, ::Vector2 size)
+            : ::Rectangle{position.x, position.y, size.x, size.y} {}
+    Rectangle(::Vector2 size) : ::Rectangle{0, 0, size.x, size.y} {}
+    Rectangle(::Vector4 rect) : ::Rectangle{rect.x, rect.y, rect.z, rect.w} {}
 
-        Rectangle& operator=(const ::Rectangle& rect) {
-            set(rect);
-            return *this;
-        }
+    GETTERSETTER(float, X, x)
+    GETTERSETTER(float, Y, y)
+    GETTERSETTER(float, Width, width)
+    GETTERSETTER(float, Height, height)
 
-        Rectangle& operator=(const Rectangle& rect) {
-            set(rect);
-            return *this;
-        }
+    Rectangle& operator=(const ::Rectangle& rect) {
+        set(rect);
+        return *this;
+    }
 
-		inline Rectangle& Draw(::Color color) {
-			::DrawRectangle(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height), color);
-			return *this;
-		}
-		inline Rectangle& Draw(::Vector2 origin, float rotation, ::Color color) {
-			::DrawRectanglePro(*this, origin, rotation, color);
-			return *this;
-		}
+    inline ::Vector4 ToVector4() {
+        return {x, y, width, height};
+    }
 
-		inline Rectangle& DrawGradientV(::Color color1, ::Color color2){
-			::DrawRectangleGradientH(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height), color1, color2);
-			return *this;
-		}
-		inline Rectangle& DrawGradientH(::Color color1, ::Color color2) {
-			::DrawRectangleGradientH(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height), color1, color2);
-			return *this;
-		}
-		inline Rectangle& DrawGradient(::Color col1, ::Color col2, ::Color col3, ::Color col4) {
-			::DrawRectangleGradientEx(*this, col1, col2, col3, col4);
-			return *this;
-		}
-		inline Rectangle& DrawLines(::Color color){
-			::DrawRectangleLines(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height), color);
-			return *this;
-		}
-		inline Rectangle& DrawLinesEx(int lineThick, ::Color color){
-			::DrawRectangleLinesEx(*this, lineThick, color);
-			return *this;
-		}
-		inline Rectangle& DrawRounded(float roundness, int segments, ::Color color){
-			::DrawRectangleRounded(*this, roundness, segments, color);
-			return *this;
-		}
-		inline Rectangle& DrawRoundedLines(float roundness, int segments, int lineThick, ::Color color) {
-			::DrawRectangleRoundedLines(*this, roundness, segments, lineThick, color);
-			return *this;
-		}
+    operator ::Vector4() const {
+        return {x, y, width, height};
+    }
 
-		inline bool CheckCollision(::Rectangle rec2) {
-			return ::CheckCollisionRecs(*this, rec2);
-		}
-		inline Rectangle GetCollision(::Rectangle rec2) {
-			return ::GetCollisionRec(*this, rec2);
-		}
-		inline bool CheckCollision(::Vector2 point) {
-			return ::CheckCollisionPointRec(point, *this);
-		}
-	};
-}
+    /**
+     * Draw a color-filled rectangle
+     */
+    inline void Draw(::Color color) const {
+        ::DrawRectangleRec(*this, color);
+    }
 
-#endif
+    inline void Draw(::Vector2 origin, float rotation, ::Color color) const {
+        ::DrawRectanglePro(*this, origin, rotation, color);
+    }
+
+    inline void DrawGradientV(::Color color1, ::Color color2) const {
+        ::DrawRectangleGradientV(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width),
+            static_cast<int>(height), color1, color2);
+    }
+
+    inline void DrawGradientH(::Color color1, ::Color color2) const {
+        ::DrawRectangleGradientH(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width),
+            static_cast<int>(height), color1, color2);
+    }
+
+    inline void DrawGradient(::Color col1, ::Color col2, ::Color col3, ::Color col4) const {
+        ::DrawRectangleGradientEx(*this, col1, col2, col3, col4);
+    }
+
+    inline void DrawLines(::Color color) const {
+        ::DrawRectangleLines(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width),
+            static_cast<int>(height), color);
+    }
+
+    inline void DrawLines(::Color color, float lineThick) const {
+        ::DrawRectangleLinesEx(*this, lineThick, color);
+    }
+
+    inline void DrawRounded(float roundness, int segments, ::Color color) const {
+        ::DrawRectangleRounded(*this, roundness, segments, color);
+    }
+
+    inline void DrawRoundedLines(float roundness, int segments,
+            float lineThick, ::Color color) const {
+        ::DrawRectangleRoundedLines(*this, roundness, segments, lineThick, color);
+    }
+
+    /**
+     * Check collision between two rectangles
+     */
+    inline bool CheckCollision(::Rectangle rec2) const {
+        return ::CheckCollisionRecs(*this, rec2);
+    }
+
+    /**
+     * Get collision rectangle for two rectangles collision
+     */
+    inline ::Rectangle GetCollision(::Rectangle rec2) const {
+        return ::GetCollisionRec(*this, rec2);
+    }
+
+    /**
+     * Check if point is inside rectangle
+     */
+    inline bool CheckCollision(::Vector2 point) const {
+        return ::CheckCollisionPointRec(point, *this);
+    }
+
+    /**
+     * Check collision between circle and rectangle
+     */
+    inline bool CheckCollision(::Vector2 center, float radius) {
+        return ::CheckCollisionCircleRec(center, radius, *this);
+    }
+
+    inline Vector2 GetSize() {
+        return {width, height};
+    }
+
+    inline Rectangle& SetSize(float newWidth, float newHeight) {
+        width = newWidth;
+        height = newHeight;
+        return *this;
+    }
+
+    inline Rectangle& SetSize(const ::Vector2& size) {
+        return SetSize(size.x, size.y);
+    }
+
+    inline Rectangle& SetShapesTexture(const ::Texture2D& texture) {
+        ::SetShapesTexture(texture, *this);
+        return *this;
+    }
+
+    inline Vector2 GetPosition() {
+        return {x, y};
+    }
+
+    inline Rectangle& SetPosition(float newX, float newY) {
+        x = newX;
+        y = newY;
+        return *this;
+    }
+
+    inline Rectangle& SetPosition(const ::Vector2& position) {
+        return SetPosition(position.x, position.y);
+    }
+
+ private:
+    void set(const ::Rectangle& rect) {
+        x = rect.x;
+        y = rect.y;
+        width = rect.width;
+        height = rect.height;
+    }
+};
+}  // namespace raylib
+
+using RRectangle = raylib::Rectangle;
+
+#endif  // RAYLIB_CPP_INCLUDE_RECTANGLE_HPP_

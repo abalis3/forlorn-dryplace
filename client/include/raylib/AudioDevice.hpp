@@ -1,48 +1,74 @@
-#ifndef RAYLIB_CPP_AUDIODEVICE_HPP_
-#define RAYLIB_CPP_AUDIODEVICE_HPP_
+#ifndef RAYLIB_CPP_INCLUDE_AUDIODEVICE_HPP_
+#define RAYLIB_CPP_INCLUDE_AUDIODEVICE_HPP_
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-#include "raylib.h"
-#ifdef __cplusplus
-}
-#endif
-
-#include "utils.hpp"
+#include "./raylib.hpp"
+#include "./raylib-cpp-utils.hpp"
+#include "./RaylibException.hpp"
 
 namespace raylib {
-	class AudioDevice {
-	public:
-		AudioDevice(bool lateInit = false) {
-			if (!lateInit) {
-				Init();
-			}
-		};
+/**
+ * Audio device management functions.
+ */
+class AudioDevice {
+ public:
+    /**
+     * Initialize audio device and context.
+     *
+     * @param lateInit Whether or not to post-pone initializing the context.
+     *
+     * @throws raylib::RaylibException Throws if the AudioDevice failed to initialize.
+     */
+    AudioDevice(bool lateInit = false) {
+        if (!lateInit) {
+            Init();
+        }
+    }
 
-		~AudioDevice() {
-			Close();
-		};
+    /**
+     * Close the audio device and context.
+     */
+    ~AudioDevice() {
+        Close();
+    }
 
-		inline AudioDevice& Init() {
-			::InitAudioDevice();
-			return *this;
-		}
+    /**
+     * Initialize audio device and context.
+     *
+     * @throws raylib::RaylibException Throws if the AudioDevice failed to initialize.
+     */
+    inline void Init() {
+        ::InitAudioDevice();
+        if (!IsReady()) {
+            throw RaylibException("Failed to initialize AudioDevice");
+        }
+    }
 
-		inline AudioDevice& Close() {
-			::CloseAudioDevice();
-			return *this;
-		}
+    /**
+     * Close the audio device and context.
+     */
+    inline void Close() {
+        ::CloseAudioDevice();
+    }
 
-		inline bool IsReady() {
-			return ::IsAudioDeviceReady();
-		}
+    /**
+     * Check if audio device has been initialized successfully.
+     */
+    inline bool IsReady() const {
+        return ::IsAudioDeviceReady();
+    }
 
-		inline AudioDevice& SetVolume(float volume) {
-			::SetMasterVolume(volume);
-			return *this;
-		}
-	};
-}
+    /**
+     * Set master volume (listener).
+     *
+     * @param volume The desired volume to set.
+     */
+    inline AudioDevice& SetVolume(float volume) {
+        ::SetMasterVolume(volume);
+        return *this;
+    }
+};
+}  // namespace raylib
 
-#endif
+using RAudioDevice = raylib::AudioDevice;
+
+#endif  // RAYLIB_CPP_INCLUDE_AUDIODEVICE_HPP_

@@ -1,7 +1,7 @@
 #include "MainMenu.h"
 
 #include "Util.h"
-#include <iostream>
+#include <stdio.h>
 
 /* Filepaths for external resources */
 static const char BACKGROUND_IMG_PATH[] = "MainMenu/desert-background.png";
@@ -9,6 +9,12 @@ static const char TITLE_IMG_PATH[] = "MainMenu/main-title.png";
 static const char ZOOMSELECTOR_IMG_PATH[] = "MainMenu/zoomselector.png";
 static const char TEXT_LABEL_PATHS[] = "MainMenu/text-labels.png";
 static const char SELECTABLEBUTTON_IMG_PATH[] = "MainMenu/selectablebutton.png";
+static const char MARVEL_FONT_PATH[] = "Fonts/Marvel-Regular.ttf";
+static const char RECON_OVERLAY_BG_PATH[] = "recon-overlay-bg.png";
+static const char RECON_TEXT_PATH[] = "recon-text.png";
+
+/* Constants related to fonts */
+static const int BASE_FONT_SIZE = 175;
 
 /* Background pan animation parameters */
 static const float BG_MAX_SPEED = 0.02;
@@ -70,6 +76,15 @@ static const float OL_NAME_TB_ERROR_TL_TOP_POS = 0.68; /* Pct of screen ht = y c
 static const float HOST_JOIN_ZS_TOP_POS = 0.45;
 static const float HOST_JOIN_ZS_BOT_POS = 0.89;
 
+/* Overlay for 'reconnecting' parameters */
+static const float RECON_TEXT_TOP_POS = 0.25; /* Pct of screen height = y coord of top of text */
+static const float RECON_TEXT_HEIGHT_PCT = 0.06; /* Pct of screen height = height of text */
+static const float RECON_TIME_TOP_POS = 0.35; /* Pct of screen height = y of top of time text */
+static const float RECON_TIME_HEIGHT_PCT = 0.08; /* Pct of screen height = height of time text */
+static const float RECON_TIME_SPACE_PCT = 0.07; /* Pct of time text height = spacing b/t chars */
+static const float RECON_LS_VERT_POS = 0.53; /* Pct of screen height = y coord of ctr pt of ls */
+static const float RECON_LS_SIZE_PCT = 0.12; /* Pct of screen height = size of ls */
+
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
 static const raylib::Rectangle ZS_TEXT_PLAY_LOCAL_GAME(0, 0, 894, 137);
@@ -110,6 +125,11 @@ MainMenu::MainMenu(Window &window)
     olNameSubmitResult = ServerSession::Event::NONE;
     olNameShowConnectErr = false;
     olNameShowTakenErr = false;
+    reconnecting = false;
+
+    marvelFont = new raylib::Font(Util::formResourcePath(MARVEL_FONT_PATH), BASE_FONT_SIZE,
+            nullptr, 95);
+    GenTextureMipmaps(&marvelFont->texture);
 
     /* Create the ServerSession for use with online communication */
     session = new ServerSession();
@@ -187,6 +207,13 @@ MainMenu::MainMenu(Window &window)
     hostJoinZoomSel->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
     hostJoinZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     hostJoinZoomSel->setDependentOpacity(0);
+
+    /* Initialize objects for 'reconnecting' overlay */
+    reconLoadSpinner = new LoadingSpinner();
+    reconOverlayBgTexture = new raylib::Texture(Util::formResourcePath(RECON_OVERLAY_BG_PATH));
+    reconOverlayBgTexture->GenMipmaps();
+    reconTextTexture = new raylib::Texture(Util::formResourcePath(RECON_TEXT_PATH));
+    reconTextTexture->GenMipmaps();
 }
 
 MainMenu::~MainMenu()
@@ -195,6 +222,10 @@ MainMenu::~MainMenu()
     delete titleTexture;
     delete textLabelTexture;
     delete selButtonTexture;
+    delete reconOverlayBgTexture;
+    delete reconTextTexture;
+    delete reconLoadSpinner;
+    delete marvelFont;
     delete toplevelZoomSel;
     delete windowedSelButton;
     delete fullscreenSelButton;
@@ -210,34 +241,50 @@ MainMenu::~MainMenu()
 
 void MainMenu::update(double secs)
 {
-    /* Update velocity of background */
-    float bgVelocity = bgSrcXPosIncreasing ? 1 : -1;
-    if (bgSrcXPercent < BG_SPEED_CUTOFF) {
-        /* Slowing down with x pos percent close to 0 */
-        bgVelocity *= BG_MIN_SPEED + (bgSrcXPercent / BG_SPEED_CUTOFF) *
-                (BG_MAX_SPEED - BG_MIN_SPEED);
-    } else if (bgSrcXPercent > (1 - BG_SPEED_CUTOFF)) {
-        /* Slowing down with x pos percent close to 1 */
-        bgVelocity *= BG_MIN_SPEED + ((1 - bgSrcXPercent) / BG_SPEED_CUTOFF) *
-                (BG_MAX_SPEED - BG_MIN_SPEED);
-    } else {
-        /* Going full speed between the upper and lower cutoffs */
-        bgVelocity *= BG_MAX_SPEED;
-    }
-
-    /* Update position of background */
-    bgSrcXPercent += bgVelocity * secs;
-    if (bgSrcXPercent > 1) {
-        bgSrcXPercent = 1;
-        bgSrcXPosIncreasing = false;
-    } else if (bgSrcXPercent < 0) {
-        bgSrcXPercent = 0;
-        bgSrcXPosIncreasing = true;
-    }
-    bgSrcXPos = bgSrcXMax * bgSrcXPercent;
-
     /* Poll online session */
     session->poll(secs);
+
+    if (reconnecting) {
+        
+        /* Updating remaining time until connection disconnected */
+        int newRemTime = session->getSuspendedTimeLeft();
+        if (newRemTime != reconLastRemTime) {
+            if ((newRemTime >= 0) && (newRemTime <= 120)) {
+                reconLastRemTime = newRemTime;
+                sprintf(reconRemTime, "%d", newRemTime);
+                calculateReconTimeTextSize(); /* Recalculate rendered size w/ new string */
+            } else {
+                reconRemTime[0] = '\0';
+            }
+        }
+
+    } else {
+        /* Update velocity of background */
+        float bgVelocity = bgSrcXPosIncreasing ? 1 : -1;
+        if (bgSrcXPercent < BG_SPEED_CUTOFF) {
+            /* Slowing down with x pos percent close to 0 */
+            bgVelocity *= BG_MIN_SPEED + (bgSrcXPercent / BG_SPEED_CUTOFF) *
+                    (BG_MAX_SPEED - BG_MIN_SPEED);
+        } else if (bgSrcXPercent > (1 - BG_SPEED_CUTOFF)) {
+            /* Slowing down with x pos percent close to 1 */
+            bgVelocity *= BG_MIN_SPEED + ((1 - bgSrcXPercent) / BG_SPEED_CUTOFF) *
+                    (BG_MAX_SPEED - BG_MIN_SPEED);
+        } else {
+            /* Going full speed between the upper and lower cutoffs */
+            bgVelocity *= BG_MAX_SPEED;
+        }
+
+        /* Update position of background */
+        bgSrcXPercent += bgVelocity * secs;
+        if (bgSrcXPercent > 1) {
+            bgSrcXPercent = 1;
+            bgSrcXPosIncreasing = false;
+        } else if (bgSrcXPercent < 0) {
+            bgSrcXPercent = 0;
+            bgSrcXPosIncreasing = true;
+        }
+        bgSrcXPos = bgSrcXMax * bgSrcXPercent;
+    }
 
     switch (currentState) {
 
@@ -293,7 +340,6 @@ void MainMenu::render(Renderer *renderer)
             titleHeight, titleOpacity);
 
     switch (currentState) {
-    
     case State::INITIAL_FADE:
         renderForState(State::SHOW_TOPLEVEL, renderer);
         break;
@@ -307,12 +353,27 @@ void MainMenu::render(Renderer *renderer)
         renderForState(currentState, renderer);
         break;
     }
+
+    if (reconnecting) {
+        /* If reconnecting, render additional content over the top */
+        renderer->drawTexture(reconOverlayBgTexture, 0, 0, getWidth(), getHeight(), 1.0f);
+        renderer->drawTexture(reconTextTexture, reconTextXPos, reconTextYPos, reconTextWidth,
+                reconTextHeight, 1.0f);
+        
+        renderer->setColor(WHITE);
+        renderer->drawText(*marvelFont, reconRemTime, (getWidth() - reconTimeRenderWidth) / 2,
+            getHeight() * RECON_TIME_TOP_POS, reconTimeFontSize,
+            reconTimeFontSize * RECON_TIME_SPACE_PCT, 1.0f);
+
+        reconLoadSpinner->render(renderer);
+    }
 }
 
 void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
 {
     calculateBgSizeParams();
     calculateTitleSizeParams();
+    calculateReconOverlaySizeParams();
 
     float zoomSelHeight, zoomSelYPos, zoomSelItemPadding;
     float textLabelHeight, textLabelMaxX;
@@ -406,6 +467,11 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     zoomSelYPos = ((HOST_JOIN_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
     zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
     hostJoinZoomSel->updatePosition(zoomSelHeight, getWidth() / 2, zoomSelYPos, zoomSelItemPadding);
+
+    /* Update 'reconnecting' overlay size params */
+    reconLoadSpinner->setSize(getHeight() * RECON_LS_SIZE_PCT);
+    reconLoadSpinner->setY(getHeight() * RECON_LS_VERT_POS);
+    reconLoadSpinner->setX(getWidth() / 2);
 }
 
 void MainMenu::calculateBgSizeParams()
@@ -424,8 +490,31 @@ void MainMenu::calculateTitleSizeParams()
     titleXPos = (getWidth() - titleWidth) / 2;
 }
 
+void MainMenu::calculateReconOverlaySizeParams()
+{
+    reconTextYPos = getHeight() * RECON_TEXT_TOP_POS;
+    reconTextHeight = getHeight() * RECON_TEXT_HEIGHT_PCT;
+    reconTextWidth = (reconTextHeight / reconTextTexture->GetHeight()) *
+            reconTextTexture->GetWidth();
+    reconTextXPos = (getWidth() - reconTextWidth) / 2;
+
+    reconTimeFontSize = getHeight() * RECON_TIME_HEIGHT_PCT;
+    calculateReconTimeTextSize();
+}
+
+void MainMenu::calculateReconTimeTextSize()
+{
+    reconTimeRenderWidth = marvelFont->MeasureText(reconRemTime, reconTimeFontSize,
+            reconTimeFontSize * RECON_TIME_SPACE_PCT).GetX();
+}
+
 void MainMenu::onMousePosUpdate(const raylib::Vector2 &pos)
 {
+    if (reconnecting) {
+        /* Don't update mouse pos if reconnecting */
+        return;
+    }
+
     switch (currentState) {
     
     case State::INITIAL_FADE:
@@ -455,6 +544,11 @@ void MainMenu::setWindowRequestCallback(std::function<void(const WindowConfigura
 
 void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
 {
+    if (reconnecting) {
+        /* Don't allow mouse presses if reconnecting */
+        return;
+    }
+
     /* Handle left button press event per state of the menu */
     if (button == MOUSE_LEFT_BUTTON) {
         switch (currentState) {
@@ -487,6 +581,11 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
 
 void MainMenu::onKeyPressed(int key)
 {
+    if (reconnecting) {
+        /* Don't allow keypresses if reconnecting */
+        return;
+    }
+
     switch(currentState) {
     case State::SHOW_ONLINE_NAME_INPUT:
         if (key == KEY_ENTER) {
@@ -644,6 +743,12 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
 
 void MainMenu::updateForState(State menuState, double secs)
 {
+    if (reconnecting) {
+        /* If reconnecting, pause other states processing */
+        reconLoadSpinner->update(secs);
+        return;
+    }
+
     switch(menuState) {
     
     case State::SHOW_TOPLEVEL:
@@ -768,6 +873,19 @@ void MainMenu::onSessionEvent(ServerSession::Event event)
     case ServerSession::Event::NAME_ACCEPTED:
     case ServerSession::Event::NAME_REJECTED:
         olNameSubmitResult = event;
+        break;
+
+    case ServerSession::Event::CONNECTION_SUSPENDED:
+        reconnecting = true;
+        break;
+
+    case ServerSession::Event::CONNECTION_RESUMED:
+        reconnecting = false;
+        break;
+
+    case ServerSession::Event::CONNECTION_LOST:
+        reconnecting = false;
+        initiateFadeToState(State::SHOW_ONLINE_NAME_INPUT);
         break;
 
     default:

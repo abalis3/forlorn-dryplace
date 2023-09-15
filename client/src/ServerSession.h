@@ -25,8 +25,10 @@ class ServerSession {
 
     enum class Event {
         NONE,
-        CONNECTION_LOST,    /* AFTER name accepted/rejected, loss of connection */
-        CONNECTION_FAILED,  /* Connection not made or lost before name accept/reject */
+        CONNECTION_FAILED,    /* Connection not made or issue before name accept/reject */
+        CONNECTION_SUSPENDED, /* AFTER name accepted/rejected, connection suspended */
+        CONNECTION_RESUMED,   /* A suspended connection was restored to healthy state */
+        CONNECTION_LOST,      /* AFTER name accepted/rejected, loss of connection */
         NAME_ACCEPTED,
         NAME_REJECTED,
     };
@@ -42,6 +44,9 @@ class ServerSession {
 
     /* Poll events for this ServerSession. Should be called regularly */
     void poll(double secs);
+
+    /* Get the remaining time until a suspended session is disconnected */
+    int getSuspendedTimeLeft();
 
  private:
 

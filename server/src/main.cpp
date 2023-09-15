@@ -7,6 +7,7 @@
 #define PORT 44444
 
 SessionList *sessions;
+double g_exec_secs = 0;
 
 static void onMsgRecv(Connection *conn, pbuf::NetworkMessage msg) {
     if (msg.type_case() == pbuf::NetworkMessage::kNameRequest) {
@@ -18,15 +19,15 @@ static void onMsgRecv(Connection *conn, pbuf::NetworkMessage msg) {
                 sess = sessions->findByConnection(conn);
             }
             if (sess->getName() == nullptr) {
-                std::cout << "Accepted name '" << msg.namerequest() << "' for session with " <<
+                std::cout << g_exec_secs << ": Accepted name '" << msg.namerequest() << "' for session with " <<
                         conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
             } else {
-                std::cout << "Updated name to '" << msg.namerequest() << "' for session with " <<
+                std::cout << g_exec_secs << ": Updated name to '" << msg.namerequest() << "' for session with " <<
                         conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
             }
             sess->setName(msg.namerequest());
         } else {
-            std::cout << "Already-taken name '" << msg.namerequest() << "' rejected for session with " <<
+            std::cout << g_exec_secs << ": Already-taken name '" << msg.namerequest() << "' rejected for session with " <<
                     conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
         }
         reply.set_namereply(nameSuccess);
@@ -37,17 +38,17 @@ static void onMsgRecv(Connection *conn, pbuf::NetworkMessage msg) {
 static void onConnectionLost(Connection *conn) {
     Session *sess = sessions->findByConnection(conn);
     if (sess != nullptr) {
-        std::cout << "Connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << " terminated" << std::endl;
+        std::cout << g_exec_secs << ": Connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << " terminated" << std::endl;
         sessions->destroySession(sess);
     }
 }
 
 static void onConnectionSuspended(Connection *conn) {
-    std::cout << "SUSPENDED connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
+    std::cout << g_exec_secs << ": SUSPENDED connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
 }
 
 static void onConnectionResumed(Connection *conn) {
-    std::cout << "RESUMED connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
+    std::cout << g_exec_secs << ": RESUMED connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
 }
 
 static void onConnAccept(Connection *conn)
@@ -59,7 +60,7 @@ static void onConnAccept(Connection *conn)
     Session *sess = sessions->generateSession();
     sess->setConnection(conn);
 
-    std::cout << "Connection received from " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
+    std::cout << g_exec_secs << ": Connection received from " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
 }
 
 int main()
@@ -85,6 +86,7 @@ int main()
         auto elapsedTime = std::chrono::high_resolution_clock::now() - lastTime;
         double elapsedSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsedTime).count() / 1000000000.0d;
         lastTime += std::chrono::nanoseconds((uint64_t) (1000000000 * elapsedSecs));
+        g_exec_secs += elapsedSecs;
 
         listener->poll();
         Session *sess = sessions->getFirst();

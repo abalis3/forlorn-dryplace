@@ -1,104 +1,239 @@
-#ifndef RAYLIB_CPP_MUSIC_HPP_
-#define RAYLIB_CPP_MUSIC_HPP_
+#ifndef RAYLIB_CPP_INCLUDE_MUSIC_HPP_
+#define RAYLIB_CPP_INCLUDE_MUSIC_HPP_
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-#include "raylib.h"
-#ifdef __cplusplus
-}
-#endif
+#include <string>
 
-#include "utils.hpp"
+#include "./raylib.hpp"
+#include "./raylib-cpp-utils.hpp"
+#include "./RaylibException.hpp"
 
 namespace raylib {
-	class Music : public ::Music {
-	public:
-		Music(::Music music) {
-			set(music);
-		};
+/**
+ * Music stream type (audio file streaming from memory)
+ */
+class Music : public ::Music {
+ public:
+    Music(::AudioStream stream = {nullptr, nullptr, 0, 0, 0},
+            unsigned int frameCount = 0,
+            bool looping = false,
+            int ctxType = 0,
+            void *ctxData = nullptr) : ::Music{stream, frameCount, looping, ctxType, ctxData} {}
 
-		Music(const std::string& fileName) {
-			set(::LoadMusicStream(fileName.c_str()));
-		}
+    Music(const ::Music& music) {
+        set(music);
+    }
 
-		~Music() {
-			Unload();
-		}
+    /**
+     * Load music stream from file
+     *
+     * @throws raylib::RaylibException Throws if the music failed to load.
+     */
+    Music(const std::string& fileName) {
+        Load(fileName);
+    }
 
-		inline void set(::Music music) {
-			ctxType = music.ctxType;
-			ctxData = music.ctxData;
-			sampleCount = music.sampleCount;
-			loopCount = music.loopCount;
-			stream = music.stream;
-		}
+    /**
+     * Load music stream from memory
+     *
+     * @throws raylib::RaylibException Throws if the music failed to load.
+     */
+    Music(const std::string& fileType, unsigned char* data, int dataSize) {
+        Load(fileType, data, dataSize);
+    }
 
-		GETTERSETTER(int,CtxType,ctxType)
-		GETTERSETTER(unsigned int,SampleCount,sampleCount)
-		GETTERSETTER(unsigned int,LoopCount,loopCount)
+    Music(const Music&) = delete;
 
-        Music& operator=(const ::Music& music) {
-            set(music);
+    Music(Music&& other) {
+        set(other);
+
+        other.stream = {};
+        other.frameCount = 0;
+        other.looping = false;
+        other.ctxType = 0;
+        other.ctxData = nullptr;
+    }
+
+    /**
+     * Unload music stream
+     */
+    ~Music() {
+        Unload();
+    }
+
+    GETTERSETTER(::AudioStream, Stream, stream)
+    GETTERSETTER(unsigned int, FrameCount, frameCount)
+    GETTERSETTER(bool, Looping, looping)
+    GETTERSETTER(int, CtxType, ctxType)
+    GETTERSETTER(void*, CtxData, ctxData)
+
+    Music& operator=(const ::Music& music) {
+        set(music);
+        return *this;
+    }
+
+    Music& operator=(const Music&) = delete;
+
+    Music& operator=(Music&& other) noexcept {
+        if (this == &other) {
             return *this;
         }
 
-        Music& operator=(const Music& music) {
-            set(music);
-            return *this;
+        Unload();
+        set(other);
+
+        other.ctxType = 0;
+        other.ctxData = nullptr;
+        other.looping = false;
+        other.frameCount = 0;
+        other.stream = {};
+
+        return *this;
+    }
+
+    /**
+     * Unload music stream
+     */
+    inline void Unload() {
+        ::UnloadMusicStream(*this);
+    }
+
+    /**
+     * Start music playing
+     */
+    inline Music& Play() {
+        ::PlayMusicStream(*this);
+        return *this;
+    }
+
+    /**
+     * Updates buffers for music streaming
+     */
+    inline Music& Update() {
+        ::UpdateMusicStream(*this);
+        return *this;
+    }
+
+    /**
+     * Stop music playing
+     */
+    inline Music& Stop() {
+        ::StopMusicStream(*this);
+        return *this;
+    }
+
+    /**
+     * Pause music playing
+     */
+    inline Music& Pause() {
+        ::PauseMusicStream(*this);
+        return *this;
+    }
+
+    /**
+     * Resume music playing
+     */
+    inline Music& Resume() {
+        ::ResumeMusicStream(*this);
+        return *this;
+    }
+
+    /**
+     * Seek music to a position (in seconds)
+     */
+    inline Music& Seek(float position) {
+        SeekMusicStream(*this, position);
+        return *this;
+    }
+
+    /**
+     * Check if music is playing
+     */
+    inline bool IsPlaying() const {
+        return ::IsMusicStreamPlaying(*this);
+    }
+
+    /**
+     * Set volume for music
+     */
+    inline Music& SetVolume(float volume) {
+        ::SetMusicVolume(*this, volume);
+        return *this;
+    }
+
+    /**
+     * Set pitch for music
+     */
+    inline Music& SetPitch(float pitch) {
+        ::SetMusicPitch(*this, pitch);
+        return *this;
+    }
+
+    /**
+     * Set pan for a music (0.5 is center)
+     */
+    inline Music& SetPan(float pan = 0.5f) {
+        ::SetMusicPan(*this, pan);
+        return *this;
+    }
+
+    /**
+     * Get music time length (in seconds)
+     */
+    inline float GetTimeLength() const {
+        return ::GetMusicTimeLength(*this);
+    }
+
+    /**
+     * Get current music time played (in seconds)
+     */
+    inline float GetTimePlayed() const {
+        return ::GetMusicTimePlayed(*this);
+    }
+
+    /**
+     * Load music stream from file
+     *
+     * @throws raylib::RaylibException Throws if the music failed to load.
+     */
+    void Load(const std::string& fileName) {
+        set(::LoadMusicStream(fileName.c_str()));
+        if (!IsReady()) {
+            throw RaylibException(TextFormat("Failed to load Music from file: %s", fileName.c_str()));
         }
+    }
 
-        inline void Unload() {
-        	::UnloadMusicStream(*this);
+    /**
+     * Load music stream from memory
+     *
+     * @throws raylib::RaylibException Throws if the music failed to load.
+     */
+    void Load(const std::string& fileType, unsigned char* data, int dataSize) {
+        set(::LoadMusicStreamFromMemory(fileType.c_str(), data, dataSize));
+        if (!IsReady()) {
+            throw RaylibException(TextFormat("Failed to load Music from %s file dat", fileType.c_str()));
         }
+    }
 
-        inline Music& Play() {
-        	::PlayMusicStream(*this);
-        	return *this;
-        }
+    /**
+     * Retrieve whether or not the Music has been loaded.
+     *
+     * @return True or false depending on whether the Music has been loaded.
+     */
+    inline bool IsReady() const {
+        return stream.buffer != nullptr;
+    }
 
-		inline Music& Update() {
-			::UpdateMusicStream(*this);
-        	return *this;
-		}
+ private:
+    void set(const ::Music& music) {
+        stream = music.stream;
+        frameCount = music.frameCount;
+        looping = music.looping;
+        ctxType = music.ctxType;
+        ctxData = music.ctxData;
+    }
+};
+}  // namespace raylib
 
-		inline Music& Stop() {
-			::StopMusicStream(*this);
-        	return *this;
-		}
+using RMusic = raylib::Music;
 
-		inline Music& Pause() {
-			::PauseMusicStream(*this);
-        	return *this;
-		}
-		inline Music& Resume() {
-			::ResumeMusicStream(*this);
-        	return *this;
-		}
-		inline bool IsPlaying() {
-			return ::IsMusicPlaying(*this);
-		}
-		inline Music& SetVolume(float volume) {
-			::SetMusicVolume(*this, volume);
-        	return *this;
-		}
-		inline Music& SetPitch(float pitch) {
-			::SetMusicPitch(*this, pitch);
-        	return *this;
-		}
-		inline Music& SetLoopCount(int count)  {
-			::SetMusicLoopCount(*this, count);
-        	return *this;
-		}
-		inline float GetTimeLength() {
-			return ::GetMusicTimeLength(*this);
-		}
-		inline float GetTimePlayed() {
-			return ::GetMusicTimePlayed(*this);
-		}
-
-
-	};
-}
-
-#endif
+#endif  // RAYLIB_CPP_INCLUDE_MUSIC_HPP_

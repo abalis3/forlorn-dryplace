@@ -12,6 +12,8 @@
 #include "LoadingSpinner.h"
 #include "ServerSession.h"
 
+const int MENU_RECON_TIME_STR_BUF_SIZE = 4; /* Max # chars (+ nullterm) for rem secs string rep */
+
 class MainMenu : public Scene {
  public:
 
@@ -84,6 +86,15 @@ class MainMenu : public Scene {
     /* Texture holding the contents of all SelectableButton objects */
     raylib::Texture *selButtonTexture;
 
+    /* Texture holding the background gradient for the reconnecting overlay */
+    raylib::Texture *reconOverlayBgTexture;
+
+    /* Texture holding the "Attempting to Reconnect..." text for the reconnecting overlay */
+    raylib::Texture *reconTextTexture;
+
+    /* Marvel font */
+    raylib::Font *marvelFont;
+
     /* Stores the next update that will be conveyed to the game runner */
     ReturnCode nextReturnCode;
 
@@ -145,6 +156,37 @@ class MainMenu : public Scene {
      * Called when scene dimensions are set or updated
      */
     void calculateTitleSizeParams();
+
+    /*********************************************************************
+     * Fields for tracking items on the reconnecting overlay             *
+     *********************************************************************/
+
+    /* 
+     * These 4 properties specify the destination rectangle on the screen
+     * that the "Attempting to reconnect" text will appear in.
+     */
+    float reconTextXPos;
+    float reconTextYPos;
+    float reconTextWidth;
+    float reconTextHeight;
+
+    /* Last time we checked the remaining connection "suspended" time, what was it? */
+    int reconLastRemTime;
+
+    /* Stringified representation of most recent "suspended" time */
+    char reconRemTime[MENU_RECON_TIME_STR_BUF_SIZE];
+
+    /* Specifies the font size that should be used to render the remaining suspended time*/
+    float reconTimeFontSize;
+
+    /* Specifies the width that would be occupied on-screen when rendering recon suspended time */
+    float reconTimeRenderWidth;
+
+    /* Calculates the size params related to items on the reconnecting overlay */
+    void calculateReconOverlaySizeParams();
+
+    /* Calculates the size of the recon overlay render width (when text changes or sizing) */
+    void calculateReconTimeTextSize();
 
     /****************************************************************
      * Fields for dealing with submenus and the content within them *
@@ -231,6 +273,12 @@ class MainMenu : public Scene {
 
     /* Zoom selector for host/join screen options */
     ZoomSelector *hostJoinZoomSel;
+
+    /* Bool to track whether the conn is suspended and we are trying to reconnect */
+    bool reconnecting;
+
+    /* LoadingSpinner shown when connection suspended and trying to reconnect */
+    LoadingSpinner *reconLoadSpinner;
 
     /* Callback to be registered for when a ZoomSelector gets clicked */
     void onZoomSelectorClicked(ZoomSelector *source, int index);

@@ -1,81 +1,188 @@
-#ifndef RAYLIB_CPP_SHADER_HPP_
-#define RAYLIB_CPP_SHADER_HPP_
+#ifndef RAYLIB_CPP_INCLUDE_SHADER_HPP_
+#define RAYLIB_CPP_INCLUDE_SHADER_HPP_
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-#include "raylib.h"
-#ifdef __cplusplus
-}
-#endif
+#include <string>
 
-#include "utils.hpp"
+#include "./raylib.hpp"
+#include "./raylib-cpp-utils.hpp"
+#include "Texture.hpp"
 
 namespace raylib {
-	class Shader : public ::Shader {
-	public:
-		Shader(::Shader shader) {
-			set(shader);
-		};
+/**
+ * Shader type (generic)
+ */
+class Shader : public ::Shader {
+ public:
+    Shader(const ::Shader& shader) {
+        set(shader);
+    }
 
-		Shader(unsigned int Id, int* Locs) {
-			id = Id;
-			locs = Locs;
-		};
+    Shader(unsigned int id, int* locs = nullptr) : ::Shader{id, locs} {}
 
-		Shader() {
-			set(GetShaderDefault());
-		}
+    Shader(const std::string& vsFileName, const std::string& fsFileName) {
+        set(::LoadShader(vsFileName.c_str(), fsFileName.c_str()));
+    }
 
-		inline void set(::Shader shader) {
-			id = shader.id;
-			locs = shader.locs;
-		}
+    Shader(const char* vsFileName, const char* fsFileName) {
+        set(::LoadShader(vsFileName, fsFileName));
+    }
 
-		GETTERSETTER(unsigned int,Id,id)
-		GETTERSETTER(int*,Locs,locs)
+    Shader(const Shader&) = delete;
 
-        Shader& operator=(const ::Shader& shader) {
-            set(shader);
+    Shader(Shader&& other) {
+        set(other);
+
+        other.id = 0;
+        other.locs = nullptr;
+    }
+
+    /**
+     * Load shader from files and bind default locations.
+     *
+     * @see ::LoadShader
+     */
+    static ::Shader Load(const std::string& vsFileName, const std::string& fsFileName) {
+        return ::LoadShader(vsFileName.c_str(), fsFileName.c_str());
+    }
+
+    /**
+     * Load a shader from memory.
+     *
+     * @see ::LoadShaderFromMemory
+     */
+    static ::Shader LoadFromMemory(const std::string& vsCode, const std::string& fsCode) {
+        return ::LoadShaderFromMemory(vsCode.c_str(), fsCode.c_str());
+    }
+
+    GETTERSETTER(unsigned int, Id, id)
+    GETTERSETTER(int*, Locs, locs)
+
+    Shader& operator=(const ::Shader& shader) {
+        set(shader);
+        return *this;
+    }
+
+    Shader& operator=(const Shader&) = delete;
+
+    Shader& operator=(Shader&& other) noexcept {
+        if (this == &other) {
             return *this;
         }
 
-        Shader& operator=(const Shader& shader) {
-            set(shader);
-            return *this;
+        Unload();
+        set(other);
+
+        other.id = 0;
+        other.locs = nullptr;
+
+        return *this;
+    }
+
+    /**
+     * Unload shader from GPU memory (VRAM)
+     */
+    ~Shader() {
+        Unload();
+    }
+
+    /**
+     * Unload shader from GPU memory (VRAM)
+     */
+    void Unload() {
+        if (locs != nullptr) {
+            ::UnloadShader(*this);
         }
+    }
 
-		~Shader() {
-			Unload();
-		}
+    /**
+     * Begin custom shader drawing.
+     */
+    inline Shader& BeginMode() {
+        ::BeginShaderMode(*this);
+        return *this;
+    }
 
-		void Unload() {
-			::UnloadShader(*this);
-		}
+    /**
+     * End custom shader drawing (use default shader).
+     */
+    inline Shader& EndMode() {
+        ::EndShaderMode();
+        return *this;
+    }
 
-		static Shader Load(const std::string& vsFileName, const std::string& fsFileName) {
-			return ::LoadShader(vsFileName.c_str(), fsFileName.c_str());
-		}
-		static Shader LoadCode(const std::string& vsCode, const std::string& fsCode) {
-			char* param1 = (char*)vsCode.c_str();
-			char* param2 = (char*)fsCode.c_str();
-			return ::LoadShaderCode(param1, param2);
-		}
+    /**
+     * Get shader uniform location
+     *
+     * @see GetShaderLocation()
+     */
+    inline int GetLocation(const std::string& uniformName) const {
+        return ::GetShaderLocation(*this, uniformName.c_str());
+    }
 
-		inline Shader& BeginShaderMode() {
-			::BeginShaderMode(*this);
-			return *this;
-		}
+    /**
+     * Get shader attribute location
+     *
+     * @see GetShaderLocationAttrib()
+     */
+    inline int GetLocationAttrib(const std::string& attribName) const {
+        return ::GetShaderLocationAttrib(*this, attribName.c_str());
+    }
 
-		inline Shader& EndShaderMode() {
-			::EndShaderMode();
-			return *this;
-		}
+    /**
+     * Set shader uniform value
+     *
+     * @see SetShaderValue()
+     */
+    inline Shader& SetValue(int uniformLoc, const void* value, int uniformType) {
+        ::SetShaderValue(*this, uniformLoc, value, uniformType);
+        return *this;
+    }
 
-		inline int GetLocation(const std::string& uniformName) {
-			return ::GetShaderLocation(*this, uniformName.c_str());
-		}
-	};
-}
+    /**
+     * Set shader uniform value vector
+     *
+     * @see SetShaderValueV()
+     */
+    inline Shader& SetValue(int uniformLoc, const void* value, int uniformType, int count) {
+        ::SetShaderValueV(*this, uniformLoc, value, uniformType, count);
+        return *this;
+    }
 
-#endif
+    /**
+     * Set shader uniform value (matrix 4x4)
+     *
+     * @see SetShaderValueMatrix()
+     */
+    inline Shader& SetValue(int uniformLoc, const ::Matrix& mat) {
+        ::SetShaderValueMatrix(*this, uniformLoc, mat);
+        return *this;
+    }
+
+    /**
+     * Set shader uniform value for texture
+     *
+     * @see SetShaderValueTexture()
+     */
+    inline Shader& SetValue(int uniformLoc, const ::Texture2D& texture) {
+        ::SetShaderValueTexture(*this, uniformLoc, texture);
+        return *this;
+    }
+
+    /**
+     * Retrieves whether or not the shader is ready.
+     */
+    bool IsReady() const {
+        return id != 0 && locs != nullptr;
+    }
+
+ private:
+    void set(const ::Shader& shader) {
+        id = shader.id;
+        locs = shader.locs;
+    }
+};
+}  // namespace raylib
+
+using RShader = raylib::Shader;
+
+#endif  // RAYLIB_CPP_INCLUDE_SHADER_HPP_
