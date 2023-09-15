@@ -92,6 +92,11 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
     const int tcp_maxrt = 2 * CLOSE_SUSPENDED_TIME;
     err = setsockopt(sockfd, IPPROTO_TCP, TCP_MAXRT, (char*) &maxrt, sizeof(maxrt));
     if (err == SOCKET_ERROR) {
+#elif COMPILING_ON_OSX
+    const unsigned int tcp_rxt_conndroptime = 2 * CLOSE_SUSPENDED_TIME * 1000; /* millis?? */
+    err = setsockopt(sockfd, IPPROTO_TCP, TCP_RXT_CONNDROPTIME, &tcp_rxt_conndroptime,
+            sizeof(tcp_rxt_conndroptime));
+    if (err == -1) {
 #else
     const unsigned int tcp_user_timeout = 2 * CLOSE_SUSPENDED_TIME * 1000; /* millis */
     err = setsockopt(sockfd, IPPROTO_TCP, TCP_USER_TIMEOUT, &tcp_user_timeout,

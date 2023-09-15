@@ -1,7 +1,7 @@
 #include "MainMenu.h"
 
 #include "Util.h"
-#include <iostream>
+#include <stdlib.h>
 
 /* Filepaths for external resources */
 static const char BACKGROUND_IMG_PATH[] = "MainMenu/desert-background.png";
@@ -84,8 +84,6 @@ static const float RECON_TIME_HEIGHT_PCT = 0.08; /* Pct of screen height = heigh
 static const float RECON_TIME_SPACE_PCT = 0.07; /* Pct of time text height = spacing b/t chars */
 static const float RECON_LS_VERT_POS = 0.53; /* Pct of screen height = y coord of ctr pt of ls */
 static const float RECON_LS_SIZE_PCT = 0.12; /* Pct of screen height = size of ls */
-
-/* TODO Fix size of gimp file for recon text. Made it way too big */
 
 /* Definitions for positions of particular entries on zoom selectors textures */
 static const int ZS_TEXT_CENTER_Y = 60;
@@ -226,6 +224,7 @@ MainMenu::~MainMenu()
     delete selButtonTexture;
     delete reconOverlayBgTexture;
     delete reconTextTexture;
+    delete reconLoadSpinner;
     delete marvelFont;
     delete toplevelZoomSel;
     delete windowedSelButton;
@@ -513,7 +512,6 @@ void MainMenu::onMousePosUpdate(const raylib::Vector2 &pos)
 {
     if (reconnecting) {
         /* Don't update mouse pos if reconnecting */
-        /* TODO will this remember the last mouse pos for things like ZS? */
         return;
     }
 
