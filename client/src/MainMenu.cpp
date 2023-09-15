@@ -1,7 +1,7 @@
 #include "MainMenu.h"
 
 #include "Util.h"
-#include <stdlib.h>
+#include <stdio.h>
 
 /* Filepaths for external resources */
 static const char BACKGROUND_IMG_PATH[] = "MainMenu/desert-background.png";
@@ -251,7 +251,7 @@ void MainMenu::update(double secs)
         if (newRemTime != reconLastRemTime) {
             if ((newRemTime >= 0) && (newRemTime <= 120)) {
                 reconLastRemTime = newRemTime;
-                itoa(newRemTime, reconRemTime, 10);
+                sprintf(reconRemTime, "%d", newRemTime);
                 calculateReconTimeTextSize(); /* Recalculate rendered size w/ new string */
             } else {
                 reconRemTime[0] = '\0';

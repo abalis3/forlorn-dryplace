@@ -90,7 +90,7 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
     /* Extend time connection can sit idle before being disconnected by OS */
 #if COMPILING_ON_WINDOWS
     const int tcp_maxrt = 2 * CLOSE_SUSPENDED_TIME;
-    err = setsockopt(sockfd, IPPROTO_TCP, TCP_MAXRT, (char*) &maxrt, sizeof(maxrt));
+    err = setsockopt(sockfd, IPPROTO_TCP, TCP_MAXRT, (char*) &tcp_maxrt, sizeof(tcp_maxrt));
     if (err == SOCKET_ERROR) {
 #elif COMPILING_ON_OSX
     const unsigned int tcp_rxt_conndroptime = 2 * CLOSE_SUSPENDED_TIME * 1000; /* millis?? */
@@ -519,7 +519,7 @@ void Connection::setOnMsgReceivedCallback(std::function<void(Connection*, pbuf::
 
 
 /* Implementation for Listener class */
-#if !COMPILING_ON_WINDOWS
+#if COMPILING_ON_LINUX
 
 Listener::Listener(uint16_t port, std::function<void(Connection*)> cb)
 {
