@@ -1,8 +1,7 @@
 #include "ServerSession.h"
 #include "pbuf/generated/NetworkMessage.pb.h"
 
-//#define SERVER_ADDR "127.0.0.1"
-#define SERVER_ADDR "73.14.227.12"
+#define SERVER_ADDR "192.168.0.182"
 #define SERVER_PORT 47411
 
 /* For std::bind _1, _2 ... */
@@ -77,6 +76,16 @@ void ServerSession::poll(double secs)
     }
 }
 
+int ServerSession::getSuspendedTimeLeft()
+{
+    if (connection == nullptr) {
+        return 0;
+    }
+
+    return connection->getSuspendedTimeLeft();
+}
+
+
 void ServerSession::sendNameRequest()
 {
     requestingName = true;
@@ -117,7 +126,7 @@ void ServerSession::onConnectFail(Connection *conn)
 }
 
 void ServerSession::onConnectionLost(Connection *conn)
-{    
+{
     if (conn != connection) {
         /* This is probably bad... */
         return;
@@ -142,18 +151,20 @@ void ServerSession::onConnectionSuspended(Connection *conn)
         return;
     }
 
-    /* Suspended connection during name request = abort */
     if (requestingName) {
+        /* Suspended connection during name request = abort */
+        requestingName = false;
         delete connection;
         connection = nullptr;
         if (callback != nullptr) {
             callback(Event::CONNECTION_FAILED);
         }
         return;
+    } else {
+        if (callback != nullptr) {
+            callback(Event::CONNECTION_SUSPENDED);
+        }
     }
-
-    /* TODO: notify callback of suspended connection? */
-
 }
 
 void ServerSession::onConnectionResumed(Connection *conn)
@@ -163,7 +174,9 @@ void ServerSession::onConnectionResumed(Connection *conn)
         return;
     }
 
-    /* TODO: notify callback of recovered connection? */
+    if (callback != nullptr) {
+        callback(Event::CONNECTION_RESUMED);
+    }
 }
 
 void ServerSession::onMsgReceived(Connection *conn, pbuf::NetworkMessage msg)

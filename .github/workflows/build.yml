@@ -15,11 +15,13 @@ jobs:
       with:
         submodules: true
     - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v2
+      uses: lukka/run-vcpkg@v10.7
       with:
-        vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
+        vcpkgJsonGlob: '**/vcpkg.json'
+        runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
     - name: Build executable
       run: ./linux-build.sh
       working-directory: ./server
@@ -42,11 +44,22 @@ jobs:
     - name: Install Package Manager Deps
       run: ./scripts/installLinuxDependencies.sh
     - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v2
+      uses: lukka/run-vcpkg@v10.7
       with:
-        vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
+        vcpkgJsonGlob: '**/vcpkg.json'
+        runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
+    - name: List upper dir
+      run: ls -la ..
+      working-directory: ./client
+    - name: List upper dir 3
+      run: ls -la ../vcpkg
+      working-directory: ./client
+    - name: List upper dir 2
+      run: ls -la ../vcpkg_installed
+      working-directory: ./client
     - name: Build executable
       run: ./linux-build.sh
       working-directory: ./client
@@ -65,11 +78,13 @@ jobs:
       with:
         submodules: true
     - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v2
+      uses: lukka/run-vcpkg@v10.7
       with:
-        vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
+        vcpkgJsonGlob: '**/vcpkg.json'
+        runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
     - name: Build executable
       run: ./mac-build.sh
       working-directory: ./client
@@ -88,13 +103,16 @@ jobs:
       with:
         submodules: true
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.0
+      uses: microsoft/setup-msbuild@v1.3.1
     - name: Grab or Build Vcpkg Deps
-      uses: lukka/run-vcpkg@v2
+      uses: lukka/run-vcpkg@v10.7
       with:
-        vcpkgArguments: '@${{ github.workspace }}/vcpkg-deps.txt'
         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        appendedCacheKey: ${{ hashFiles('vcpkg-deps.txt') }}
+        vcpkgJsonGlob: '**/vcpkg.json'
+        runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
+        VCPKG_DEFAULT_TRIPLET: x86-windows
     - name: Build executable
       run: ./win-build.bat
       working-directory: ./client

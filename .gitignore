@@ -33,5 +33,6 @@
 # Custom
 /client/bin
 /.vscode
+/vcpkg_installed
 *.pb.cc
 *.pb.h

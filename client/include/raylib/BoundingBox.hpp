@@ -1,64 +1,87 @@
-#ifndef RAYLIB_CPP_BOUNDINGBOX_HPP_
-#define RAYLIB_CPP_BOUNDINGBOX_HPP_
+#ifndef RAYLIB_CPP_INCLUDE_BOUNDINGBOX_HPP_
+#define RAYLIB_CPP_INCLUDE_BOUNDINGBOX_HPP_
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-#include "raylib.h"
-#ifdef __cplusplus
-}
-#endif
-
-#include "utils.hpp"
+#include "./raylib.hpp"
+#include "./raylib-cpp-utils.hpp"
 
 namespace raylib {
-	class BoundingBox : public ::BoundingBox {
-	public:
-		BoundingBox(::BoundingBox box) {
-			set(box);
-		};
-		BoundingBox(::Mesh mesh) {
-			set(MeshBoundingBox(mesh));
-		}
-		BoundingBox(::Vector3 Min, ::Vector3 Max) {
-			min = Min;
-			max = Max;
-		};
-		inline void set(::BoundingBox box) {
-			min = box.min;
-			max = box.max;
-		}
+/**
+ * Bounding box type
+ */
+class BoundingBox : public ::BoundingBox {
+ public:
+    /*
+     * Copy a bounding box from another bounding box.
+     */
+    BoundingBox(const ::BoundingBox& box) : ::BoundingBox{box.min, box.max} {
+        // Nothing.
+    }
 
-		GETTERSETTER(::Vector3,Min,min)
-		GETTERSETTER(::Vector3,Max,max)
+    /**
+     * Compute mesh bounding box limits
+     */
+    BoundingBox(const ::Mesh& mesh) {
+        set(::GetMeshBoundingBox(mesh));
+    }
 
-        BoundingBox& operator=(const ::BoundingBox& box) {
-            set(box);
-            return *this;
-        }
+    BoundingBox(::Vector3 minMax = ::Vector3{0.0f, 0.0f, 0.0f}) : ::BoundingBox{minMax, minMax} {}
+    BoundingBox(::Vector3 min, ::Vector3 max) : ::BoundingBox{min, max} {}
 
-        BoundingBox& operator=(const BoundingBox& box) {
-            set(box);
-            return *this;
-        }
+    GETTERSETTER(::Vector3, Min, min)
+    GETTERSETTER(::Vector3, Max, max)
 
-		inline BoundingBox& Draw(::Color color = WHITE) {
-			DrawBoundingBox(*this, color);
-			return *this;
-		}
+    BoundingBox& operator=(const ::BoundingBox& box) {
+        set(box);
+        return *this;
+    }
 
-		inline bool CheckCollision(::BoundingBox box2) {
-			return CheckCollisionBoxes(*this, box2);
-		}
+    /**
+     * Draw a bounding box with wires
+     */
+    inline void Draw(::Color color = {255, 255, 255, 255}) const {
+        ::DrawBoundingBox(*this, color);
+    }
 
-		inline bool CheckCollision(::Vector3 center, float radius) {
-			return CheckCollisionBoxSphere(*this, center, radius);
-		}
+    /**
+     * Detect collision between two boxes
+     */
+    inline bool CheckCollision(const ::BoundingBox& box2) const {
+        return CheckCollisionBoxes(*this, box2);
+    }
 
-		inline bool CheckCollision(::Ray ray) {
-			return CheckCollisionRayBox(ray, *this);
-		}
-	};
-}
+    /**
+     * Detect collision between box and sphere
+     */
+    inline bool CheckCollision(::Vector3 center, float radius) const {
+        return CheckCollisionBoxSphere(*this, center, radius);
+    }
 
-#endif
+    /**
+     * Detect collision between ray and bounding box
+     */
+    inline bool CheckCollision(const ::Ray& ray) const {
+        return GetRayCollisionBox(ray, *this).hit;
+    }
+
+    /**
+     * Get collision information between ray and bounding box
+     */
+    inline RayCollision GetCollision(const ::Ray& ray) const {
+        return GetRayCollisionBox(ray, *this);
+    }
+
+ private:
+    void set(const ::BoundingBox& box) {
+        min = box.min;
+        max = box.max;
+    }
+    void set(const ::Vector3& _min, const ::Vector3& _max) {
+        min = _min;
+        max = _max;
+    }
+};
+}  // namespace raylib
+
+using RBoundingBox = raylib::BoundingBox;
+
+#endif  // RAYLIB_CPP_INCLUDE_BOUNDINGBOX_HPP_

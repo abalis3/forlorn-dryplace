@@ -3,7 +3,7 @@
 
 #include <string>
 #include <functional>
-#include <raylib/raylib.hpp>
+#include <raylib/raylib-cpp.hpp>
 
 #include "Renderer.h"
 #include "OpacityDependent.h"

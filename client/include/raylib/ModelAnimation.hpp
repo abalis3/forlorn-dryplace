@@ -1,67 +1,111 @@
-#ifndef RAYLIB_CPP_MODEL_HPP_
-#define RAYLIB_CPP_MODEL_HPP_
+#ifndef RAYLIB_CPP_INCLUDE_MODELANIMATION_HPP_
+#define RAYLIB_CPP_INCLUDE_MODELANIMATION_HPP_
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-#include "raylib.h"
-#ifdef __cplusplus
-}
-#endif
+#include <vector>
+#include <string>
 
-#include "utils.hpp"
-#include "Mesh.hpp"
+#include "./raylib.hpp"
+#include "./raylib-cpp-utils.hpp"
+#include "./Mesh.hpp"
 
 namespace raylib {
-	class ModelAnimation : public ::ModelAnimation {
-	public:
-		ModelAnimation(::ModelAnimation model) {
-			set(model);
-		};
+/**
+ * Model animation
+ */
+class ModelAnimation : public ::ModelAnimation {
+ public:
+    ModelAnimation(const ::ModelAnimation& model) {
+        set(model);
+    }
 
-		~ModelAnimation() {
-			Unload();
-		}
+    ModelAnimation(const ModelAnimation&) = delete;
 
-		inline void set(::ModelAnimation model) {
-			boneCount = model.boneCount;
-			bones = model.bones;
-			frameCount = model.frameCount;
-			framePoses = model.framePoses;
-		}
+    ModelAnimation(ModelAnimation&& other) {
+        set(other);
 
-		GETTERSETTER(int,BoneCount,boneCount)
-		GETTERSETTER(::BoneInfo*,Bones,bones)
-		GETTERSETTER(int,FrameCount,frameCount)
-		GETTERSETTER(Transform**,FramePoses,framePoses)
+        other.boneCount = 0;
+        other.frameCount = 0;
+        other.bones = nullptr;
+        other.framePoses = nullptr;
+    }
 
-        ModelAnimation& operator=(const ::ModelAnimation& model) {
-            set(model);
+    ~ModelAnimation() {
+        Unload();
+    }
+
+    /**
+     * Load model animations from file
+     */
+    static std::vector<ModelAnimation> Load(const std::string& fileName) {
+        unsigned int count = 0;
+        ::ModelAnimation* modelAnimations = ::LoadModelAnimations(fileName.c_str(), &count);
+        std::vector<ModelAnimation> mats(modelAnimations, modelAnimations + count);
+
+        RL_FREE(modelAnimations);
+
+        return mats;
+    }
+
+    GETTERSETTER(int, BoneCount, boneCount)
+    GETTERSETTER(::BoneInfo*, Bones, bones)
+    GETTERSETTER(int, FrameCount, frameCount)
+    GETTERSETTER(::Transform**, FramePoses, framePoses)
+
+    ModelAnimation& operator=(const ::ModelAnimation& model) {
+        set(model);
+        return *this;
+    }
+
+    ModelAnimation& operator=(const ModelAnimation&) = delete;
+
+    ModelAnimation& operator=(ModelAnimation&& other) noexcept {
+        if (this == &other) {
             return *this;
         }
 
-        ModelAnimation& operator=(const ModelAnimation& model) {
-            set(model);
-            return *this;
-        }
+        Unload();
+        set(other);
 
-		inline void Unload() {
-			::UnloadModelAnimation(*this);
-		}
+        other.boneCount = 0;
+        other.frameCount = 0;
+        other.bones = nullptr;
+        other.framePoses = nullptr;
 
-		inline ModelAnimation& UpdateAnimation(::Model model, int frame) {
-			::UpdateModelAnimation(model, *this, frame);
-			return *this;
-		}
+        return *this;
+    }
 
-		inline bool IsValid(::Model model) {
-			return ::IsModelAnimationValid(model, *this);
-		}
+    /**
+     * Unload animation data
+     */
+    inline void Unload() {
+        ::UnloadModelAnimation(*this);
+    }
 
-		inline bool IsModelAnimationValid(::Model model) {
-			return ::IsModelAnimationValid(model, *this);
-		}
-	};
-}
+    /**
+     * Update model animation pose
+     */
+    inline ModelAnimation& Update(const ::Model& model, int frame) {
+        ::UpdateModelAnimation(model, *this, frame);
+        return *this;
+    }
 
-#endif
+    /**
+     * Check model animation skeleton match
+     */
+    inline bool IsValid(const ::Model& model) const {
+        return ::IsModelAnimationValid(model, *this);
+    }
+
+ private:
+    void set(const ::ModelAnimation& model) {
+        boneCount = model.boneCount;
+        frameCount = model.frameCount;
+        bones = model.bones;
+        framePoses = model.framePoses;
+    }
+};
+}  // namespace raylib
+
+using RModelAnimation = raylib::ModelAnimation;
+
+#endif  // RAYLIB_CPP_INCLUDE_MODELANIMATION_HPP_

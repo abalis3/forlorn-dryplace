@@ -1,7 +1,7 @@
 #ifndef FD__RENDERER_H
 #define FD__RENDERER_H
 
-#include <raylib/raylib.hpp>
+#include <raylib/raylib-cpp.hpp>
 
 /*
  * This class represents the render context for a window

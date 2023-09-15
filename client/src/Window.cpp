@@ -107,12 +107,12 @@ Window::~Window()
 
 int Window::getWidth()
 {
-    return raylibWindow->GetScreenWidth();
+    return raylibWindow->GetWidth();
 }
 
 int Window::getHeight()
 {
-    return raylibWindow->GetScreenHeight();
+    return raylibWindow->GetHeight();
 }
 
 int Window::getFPS()
@@ -166,14 +166,6 @@ void Window::update(double secs)
             }
             currentScene->onKeyPressed(key);
             key = GetKeyPressed();
-        }
-
-        /* Special Keys Supported by keypress callback */
-        if (IsKeyPressed(KEY_BACKSPACE)) {
-            currentScene->onKeyPressed(KEY_BACKSPACE);
-        }
-        if (IsKeyPressed(KEY_ENTER)) {
-            currentScene->onKeyPressed(KEY_ENTER);
         }
     }
 

@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <netinet/tcp.h>
 
 #endif
 
@@ -29,7 +30,7 @@ static const float PING_PONG_TIME = 2.5;
  * How many seconds without receiving any messages from the remote before hard shutdown
  * of this connection. This should be a larger value than 2*PING_PONG_TIME.
  */
-static const float CLOSE_SUSPENDED_TIME = 60;
+static const float CLOSE_SUSPENDED_TIME = 120;
 
 /* Implementation for Connection class */
 
@@ -84,6 +85,25 @@ Connection::Connection(std::string ip, uint16_t port, double timeout, Connection
     if (err == -1) {
 #endif
         throw ConnectionException("Failed to set socket to nonblocking mode");
+    }
+
+    /* Extend time connection can sit idle before being disconnected by OS */
+#if COMPILING_ON_WINDOWS
+    const int tcp_maxrt = 2 * CLOSE_SUSPENDED_TIME;
+    err = setsockopt(sockfd, IPPROTO_TCP, TCP_MAXRT, (char*) &tcp_maxrt, sizeof(tcp_maxrt));
+    if (err == SOCKET_ERROR) {
+#elif COMPILING_ON_OSX
+    const unsigned int tcp_rxt_conndroptime = 2 * CLOSE_SUSPENDED_TIME * 1000; /* millis?? */
+    err = setsockopt(sockfd, IPPROTO_TCP, TCP_RXT_CONNDROPTIME, &tcp_rxt_conndroptime,
+            sizeof(tcp_rxt_conndroptime));
+    if (err == -1) {
+#else
+    const unsigned int tcp_user_timeout = 2 * CLOSE_SUSPENDED_TIME * 1000; /* millis */
+    err = setsockopt(sockfd, IPPROTO_TCP, TCP_USER_TIMEOUT, &tcp_user_timeout,
+            sizeof(tcp_user_timeout));
+    if (err == -1) {
+#endif
+        throw ConnectionException("Failed to set custom TCP user timeout on socket");
     }
 
     err = connect(sockfd, (struct sockaddr *) &address, sizeof(address));
@@ -463,6 +483,20 @@ void Connection::poll(double secs)
     }
 }
 
+int Connection::getSuspendedTimeLeft()
+{
+    if (currentState != State::SUSPENDED) {
+        return CLOSE_SUSPENDED_TIME;
+    }
+
+    if (timer > CLOSE_SUSPENDED_TIME) {
+        return 0;
+    }
+
+    return (CLOSE_SUSPENDED_TIME - timer);
+}
+
+
 void Connection::setOnConnectionLostCallback(std::function<void(Connection*)> cb)
 {
     cbs.onConnectionLost = cb;
@@ -485,7 +519,7 @@ void Connection::setOnMsgReceivedCallback(std::function<void(Connection*, pbuf::
 
 
 /* Implementation for Listener class */
-#if !COMPILING_ON_WINDOWS
+#if COMPILING_ON_LINUX
 
 Listener::Listener(uint16_t port, std::function<void(Connection*)> cb)
 {
@@ -512,6 +546,14 @@ Listener::Listener(uint16_t port, std::function<void(Connection*)> cb)
     err = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optVal, sizeof(optVal));
     if (err < 0) {
         throw ListenerException("Socket options set failed");
+    }
+
+    /* Ensure connections live long enough in idle state before OS kills them */
+    const unsigned int tcp_user_timeout = 2 * CLOSE_SUSPENDED_TIME * 1000; /* millis */
+    err = setsockopt(sockfd, IPPROTO_TCP, TCP_USER_TIMEOUT, &tcp_user_timeout,
+            sizeof(tcp_user_timeout));
+    if (err < 0) {
+        throw ListenerException("Socket option TCP_USER_TIMEOUT set failed");
     }
 
     struct sockaddr_in address = {
