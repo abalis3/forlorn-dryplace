@@ -69,8 +69,33 @@ jobs:
         name: linux-executable
         path: client/bin/forbidden-desert
 
-  build-macos:
-    runs-on: macos-latest
+  build-macos-x86:
+    runs-on: macos-13
+
+    steps:
+    - name: Checkout commit code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Grab or Build Vcpkg Deps
+      uses: lukka/run-vcpkg@v10.7
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        vcpkgJsonGlob: '**/vcpkg.json'
+        runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
+    - name: Build executable
+      run: ./mac-build.sh
+      working-directory: ./client
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: macOS-executable
+        path: client/bin/forbidden-desert
+
+  build-macos-arm:
+    runs-on: macos-14
 
     steps:
     - name: Checkout commit code
