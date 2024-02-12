@@ -251,7 +251,7 @@ void MainMenu::update(double secs)
         if (newRemTime != reconLastRemTime) {
             if ((newRemTime >= 0) && (newRemTime <= 120)) {
                 reconLastRemTime = newRemTime;
-                sprintf(reconRemTime, "%d", newRemTime);
+                snprintf(reconRemTime, MENU_RECON_TIME_STR_BUF_SIZE, "%d", newRemTime);
                 calculateReconTimeTextSize(); /* Recalculate rendered size w/ new string */
             } else {
                 reconRemTime[0] = '\0';
