@@ -115,6 +115,7 @@ jobs:
         runVcpkgInstall: true
       env:
         VCPKG_INSTALLED_DIR: vcpkg_installed/
+        VCPKG_DEFAULT_TRIPLET: arm64-osx
         VCPKG_OSX_DEPLOYMENT_TARGET: 13.0
     - name: Build executable
       run: ./mac-build.sh
