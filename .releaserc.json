@@ -11,8 +11,8 @@
       ["@semantic-release/github", {
         "assets": [
           {"path": "linux-executable/forbidden-desert-ubuntu-*.tar.gz"},
-          {"path": "macOS-executable/forbidden-desert-macOS-x86-*.tar.gz"},
-          {"path": "macOS-executable/forbidden-desert-macOS-arm64-*.tar.gz"},
+          {"path": "macOS-x86-executable/forbidden-desert-macOS-x86-*.tar.gz"},
+          {"path": "macOS-arm64-executable/forbidden-desert-macOS-arm64-*.tar.gz"},
           {"path": "windows-build/forbidden-desert-windows-*.zip"}
         ]
       }]
