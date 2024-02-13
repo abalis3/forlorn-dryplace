@@ -87,12 +87,9 @@ jobs:
         runVcpkgInstall: true
       env:
         VCPKG_INSTALLED_DIR: vcpkg_installed/
-        VCPKG_OSX_DEPLOYMENT_TARGET: 12.0
     - name: Build executable
       run: ./mac-build.sh
       working-directory: ./client
-      env:
-        OSX_DEPLOYMENT_TARGET: 12.0
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v2
       with:
@@ -116,12 +113,9 @@ jobs:
       env:
         VCPKG_INSTALLED_DIR: vcpkg_installed/
         VCPKG_DEFAULT_TRIPLET: arm64-osx
-        VCPKG_OSX_DEPLOYMENT_TARGET: 13.0
     - name: Build executable
       run: ./mac-build.sh
       working-directory: ./client
-      env:
-        OSX_DEPLOYMENT_TARGET: 13.0
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v2
       with:
