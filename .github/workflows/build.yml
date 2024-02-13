@@ -72,7 +72,7 @@ jobs:
         path: client/bin/forbidden-desert
 
   build-macos-x86:
-    runs-on: macos-13
+    runs-on: macos-12
 
     steps:
     - name: Checkout commit code
