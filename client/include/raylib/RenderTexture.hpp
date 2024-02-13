@@ -48,22 +48,22 @@ class RenderTexture : public ::RenderTexture {
     /**
      * Get the color buffer attachment texture.
      */
-    inline TextureUnmanaged GetTexture() {
+    TextureUnmanaged GetTexture() {
         return texture;
     }
 
-    inline void SetTexture(const ::Texture& newTexture) {
+    void SetTexture(const ::Texture& newTexture) {
         texture = newTexture;
     }
 
     /**
      * Depth buffer attachment texture
      */
-    inline TextureUnmanaged GetDepth() {
+    TextureUnmanaged GetDepth() {
         return depth;
     }
 
-    inline void SetDepth(const ::Texture& newDepth) {
+    void SetDepth(const ::Texture& newDepth) {
         depth = newDepth;
     }
 
@@ -93,14 +93,14 @@ class RenderTexture : public ::RenderTexture {
         Unload();
     }
 
-    inline void Unload() {
+    void Unload() {
         UnloadRenderTexture(*this);
     }
 
     /**
      * Initializes render texture for drawing
      */
-    inline RenderTexture& BeginMode() {
+    RenderTexture& BeginMode() {
         ::BeginTextureMode(*this);
         return *this;
     }
@@ -108,7 +108,7 @@ class RenderTexture : public ::RenderTexture {
     /**
      * Ends drawing to render texture
      */
-    inline RenderTexture& EndMode() {
+    RenderTexture& EndMode() {
         ::EndTextureMode();
         return *this;
     }
@@ -124,10 +124,10 @@ class RenderTexture : public ::RenderTexture {
      * Retrieves whether or not the render texture is ready.
      */
     bool IsReady() const {
-        return id != 0;
+        return ::IsRenderTextureReady(*this);
     }
 
- private:
+ protected:
     void set(const ::RenderTexture& renderTexture) {
         id = renderTexture.id;
         texture = renderTexture.texture;
