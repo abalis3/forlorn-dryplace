@@ -14,6 +14,8 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Install Package Manager Deps
+      run: ./scripts/installLinuxDependencies.sh
     - name: Grab or Build Vcpkg Deps
       uses: lukka/run-vcpkg@v10.7
       with:
@@ -60,8 +62,8 @@ jobs:
         name: linux-executable
         path: client/bin/forbidden-desert
 
-  build-macos:
-    runs-on: macos-latest
+  build-macos-x86:
+    runs-on: macos-12
 
     steps:
     - name: Checkout commit code
@@ -82,7 +84,33 @@ jobs:
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v2
       with:
-        name: macOS-executable
+        name: macOS-x86-executable
+        path: client/bin/forbidden-desert
+
+  build-macos-arm:
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout commit code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Grab or Build Vcpkg Deps
+      uses: lukka/run-vcpkg@v10.7
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        vcpkgJsonGlob: '**/vcpkg.json'
+        runVcpkgInstall: true
+      env:
+        VCPKG_INSTALLED_DIR: vcpkg_installed/
+        VCPKG_DEFAULT_TRIPLET: arm64-osx
+    - name: Build executable
+      run: ./mac-build.sh
+      working-directory: ./client
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: macOS-arm64-executable
         path: client/bin/forbidden-desert
 
   build-windows:
@@ -119,7 +147,8 @@ jobs:
     needs:
       - build-server
       - build-linux
-      - build-macos
+      - build-macos-x86
+      - build-macos-arm
       - build-windows
 
     steps:
@@ -137,11 +166,16 @@ jobs:
       with:
         name: linux-executable
         path: linux-executable
-    - name: Download mac build artifact
+    - name: Download mac x86 build artifact
       uses: actions/download-artifact@v2
       with:
-        name: macOS-executable
-        path: macOS-executable
+        name: macOS-x86-executable
+        path: macOS-x86-executable
+    - name: Download mac arm build artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: macOS-arm64-executable
+        path: macOS-arm64-executable
     - name: Download windows build artifact
       uses: actions/download-artifact@v2
       with:

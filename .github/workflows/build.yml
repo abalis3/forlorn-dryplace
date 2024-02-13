@@ -93,7 +93,7 @@ jobs:
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v2
       with:
-        name: macOS-executable
+        name: macOS-x86-executable
         path: client/bin/forbidden-desert
 
   build-macos-arm:
@@ -119,7 +119,7 @@ jobs:
     - name: Upload executable as artifact
       uses: actions/upload-artifact@v2
       with:
-        name: macOS-executable
+        name: macOS-arm64-executable
         path: client/bin/forbidden-desert
 
   build-windows:

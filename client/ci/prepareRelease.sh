@@ -9,13 +9,22 @@ cp -r ../client/res forbidden-desert
 tar -czpvf forbidden-desert-ubuntu-v$1.tar.gz *
 cd ..
 
-cd macOS-executable
+cd macOS-x86-executable
 cp -r ../client/ci/mac-app/* .
 mkdir -p Forbidden\ Desert.app/Contents/MacOS
 mv forbidden-desert Forbidden\ Desert.app/Contents/MacOS/
 chmod +x Forbidden\ Desert.app/Contents/MacOS/forbidden-desert
 cp -r ../client/res Forbidden\ Desert.app/Contents/MacOS
-tar -czpvf forbidden-desert-macOS-v$1.tar.gz *
+tar -czpvf forbidden-desert-macOS-x86-v$1.tar.gz *
+cd ..
+
+cd macOS-arm64-executable
+cp -r ../client/ci/mac-app/* .
+mkdir -p Forbidden\ Desert.app/Contents/MacOS
+mv forbidden-desert Forbidden\ Desert.app/Contents/MacOS/
+chmod +x Forbidden\ Desert.app/Contents/MacOS/forbidden-desert
+cp -r ../client/res Forbidden\ Desert.app/Contents/MacOS
+tar -czpvf forbidden-desert-macOS-arm64-v$1.tar.gz *
 cd ..
 
 cd windows-build
