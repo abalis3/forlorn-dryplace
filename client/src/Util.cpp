@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 #define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#include <experimental/filesystem>
+#include <filesystem>
 
 static const char PREFS_DIRECTORY_NAME[] = "preferences";
 
@@ -80,7 +80,7 @@ std::string Util::formPersistDataPath(std::string relativePath)
 
 void Util::initDirectoriesForPath(std::string path)
 {
-    if (!std::experimental::filesystem::exists(path)) {
-        std::experimental::filesystem::create_directories(path);
+    if (!std::filesystem::exists(path)) {
+        std::filesystem::create_directories(path);
     }
 }
