@@ -207,6 +207,10 @@ void Window::renderFPS()
 
 void Window::updateConfiguration(const WindowConfiguration &config)
 {
+    if (!config.isFullscreen && raylibWindow->IsFullscreen()){
+        raylibWindow->ToggleFullscreen();
+    }
+
     if (config.windowWidth != getWidth() || config.windowHeight != getHeight()) {
         if (config.windowWidth == 0 && config.windowHeight == 0) {
             raylibWindow->SetSize(GetMonitorWidth(0), GetMonitorHeight(0));
@@ -215,7 +219,7 @@ void Window::updateConfiguration(const WindowConfiguration &config)
         }
     }
 
-    if (config.isFullscreen != raylibWindow->IsFullscreen()){
+    if (config.isFullscreen && !raylibWindow->IsFullscreen()){
         raylibWindow->ToggleFullscreen();
     }
 
