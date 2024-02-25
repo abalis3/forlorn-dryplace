@@ -573,6 +573,9 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
         case State::SHOW_HOST_JOIN:
             hostJoinZoomSel->onMousePressed();
             break;
+        case State::SHOW_SAVED_GAMES:
+            /* TODO */
+            break;
         case State::FADE_TRANSITION:
             break;
         }
@@ -658,6 +661,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Host */
         case 0:
+            initiateFadeToState(State::SHOW_SAVED_GAMES);
             break;
 
         /* Join */
@@ -736,6 +740,10 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
         hostJoinZoomSel->setDependentOpacity(opacity);
         break;
 
+    case State::SHOW_SAVED_GAMES:
+        /* TODO */
+        break;
+
     default:
         break;
     }
@@ -784,6 +792,10 @@ void MainMenu::updateForState(State menuState, double secs)
         hostJoinZoomSel->update(secs);
         break;
 
+    case State::SHOW_SAVED_GAMES:
+        /* TODO */
+        break;
+
     default:
         break;
     }
@@ -810,6 +822,10 @@ void MainMenu::updateMousePosForState(State menuState, const raylib::Vector2 &po
 
     case State::SHOW_HOST_JOIN:
         hostJoinZoomSel->onMousePosUpdate(pos);
+        break;
+
+    case State::SHOW_SAVED_GAMES:
+        /* TODO */
         break;
 
     default:
@@ -859,6 +875,10 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
 
     case State::SHOW_HOST_JOIN:
         hostJoinZoomSel->render(renderer);
+        break;
+
+    case State::SHOW_SAVED_GAMES:
+        /* TODO */
         break;
 
     default:

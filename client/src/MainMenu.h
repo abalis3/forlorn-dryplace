@@ -200,6 +200,7 @@ class MainMenu : public Scene {
         SHOW_SETTINGS,
         SHOW_ONLINE_NAME_INPUT,
         SHOW_HOST_JOIN,
+        SHOW_SAVED_GAMES,
     };
 
     /* Stores the current State being shown by the menu */
