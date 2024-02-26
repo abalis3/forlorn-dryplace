@@ -32,6 +32,9 @@ ListSelector::ListSelector() {
     itemHeight = LISTSELECTOR_INDIV_HEIGHTS;
     width = INIT_DIMENSION;
     height = INIT_DIMENSION;
+    x = 0;
+    y = 0;
+    scrollAmount = 0;
 }
 
 ListSelector::~ListSelector() {
@@ -73,9 +76,30 @@ void ListSelector::update(double secs) {
 }
 
 void ListSelector::render(Renderer *renderer) {
-    for (int i = 0; i < items.size(); i++) {
-        items[i]->render(renderer);
+    BeginScissorMode(x, y, width, height);
+    float curY = 0;
+    int i;
+
+    /* Skip items that are not visible because we have scrolled past them */
+    for (i = 0; i < items.size(); i++) {
+        curY += items[i]->getHeight();
+        if (curY > scrollAmount) {
+            /* This item is in the visible pane. Start rendering */
+            curY -= items[i]->getHeight();
+            break;
+        }
     }
+
+    /* Render items as long as we are still in the pane */
+    for (; i < items.size(); i++) {
+        curY += items[i]->getHeight();
+        items[i]->render(renderer);
+        if (curY > scrollAmount + height) {
+            /* That item ended past the bottom of our pane. Done rendering. */
+            break;
+        }
+    }
+    EndScissorMode();
 }
 
 /* Implementation of ListSelectorTextItem */

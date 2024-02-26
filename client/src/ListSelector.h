@@ -96,9 +96,16 @@ class ListSelector : public OpacityDependent {
     /* The current height of the items in this ListSelector (in px) */
     float itemHeight;
 
+    /* The current position of the top left corner of the ListSelector pane on the screen */
+    float x;
+    float y;
+
     /* The current dimensions of the actual visible ListSelector pane on the screen, in px */
     float width;
     float height;
+
+    /* How many pixels from the top is the ListSelector scrolled currently */
+    float scrollAmount;
 };
 
 /* Include the most basic subclass of ListSelectorItem - containing only a string of text */
