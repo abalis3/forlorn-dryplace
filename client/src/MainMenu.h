@@ -10,6 +10,7 @@
 #include "SelectableButton.h"
 #include "MenuTextBox.h"
 #include "LoadingSpinner.h"
+#include "ListSelector.h"
 #include "ServerSession.h"
 
 const int MENU_RECON_TIME_STR_BUF_SIZE = 4; /* Max # chars (+ nullterm) for rem secs string rep */
@@ -55,6 +56,12 @@ class MainMenu : public Scene {
      * it to relevant sub-objects
      */
     void onMouseButtonPressed(int button, const raylib::Vector2 &pos) override;
+
+    /*
+     * Receives a mouse wheel move event from the window and forwards it
+     * to relevent sub-objects
+     */
+    void onMouseWheelMoved(float amount, const raylib::Vector2 &pos) override;
 
     /*
      * Receives a notification that a key with given key code has been depressed
@@ -275,6 +282,15 @@ class MainMenu : public Scene {
     /* Zoom selector for host/join screen options */
     ZoomSelector *hostJoinZoomSel;
 
+    /* List selector that shows list of saved games to choose from */
+    ListSelector *savedGamesListSel;
+
+    /* Zoom selector for load saved game screen "Back" button */
+    ZoomSelector *savedGamesBackZoomSel;
+
+    /* Zoom selector for load saved game screen "Next" button */
+    ZoomSelector *savedGamesNextZoomSel;
+
     /* Bool to track whether the conn is suspended and we are trying to reconnect */
     bool reconnecting;
 
@@ -286,6 +302,9 @@ class MainMenu : public Scene {
 
     /* Callback to be registered for when a SelectableButton gets clicked */
     void onSelectableButtonSelected(SelectableButton *source);
+
+    /* Callback to be registered for when the selected item in a ListSelector changes */
+    void onListSelectorChanged(ListSelector *source, int index);
 
     /*
      * Initiate the fade to another submenu state. This includes setting the from and to states,

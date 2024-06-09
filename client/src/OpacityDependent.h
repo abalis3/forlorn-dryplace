@@ -14,7 +14,7 @@ class OpacityDependent {
      * Function called by owner/containing object to instruct the dependent on its opacity.
      * Opacity should be a value between 0 and 1 where zero is transparent and one is opaque.
      */
-    void setDependentOpacity(float opacity);
+    virtual void setDependentOpacity(float opacity);
 
     /* Main point exposed to subclasses - return opacity configured by the owning object */
     float getDependentOpacity();

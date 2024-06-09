@@ -76,6 +76,18 @@ static const float OL_NAME_TB_ERROR_TL_TOP_POS = 0.68; /* Pct of screen ht = y c
 static const float HOST_JOIN_ZS_TOP_POS = 0.45;
 static const float HOST_JOIN_ZS_BOT_POS = 0.89;
 
+/* Saved games screen parameters */
+static const float SAVED_GAMES_LS_TOP_POS = 0.40; /* Pct of screen height */
+static const float SAVED_GAMES_LS_BOT_POS = 0.83; /* Pct of screen height */
+static const float SAVED_GAMES_LS_WIDTH = 0.75; /* Pct of screen width */
+static const float SAVED_GAMES_LS_ITEM_HEIGHT = 0.1; /* Pct of screen height = height each item */
+static const float SAVED_GAMES_LS_SEP_HEIGHT = 0.002; /* Pct of screen height = height of separator */
+static const float SAVED_GAMES_LS_CREATE_TEXT_HEIGHT = 0.6; /* Pct of item height = text height */
+static const char SAVED_GAMES_LS_CREATE_TEXT[] = "Create New Game";
+static const float SAVED_GAMES_ZS_TOP_POS = 0.83;
+static const float SAVED_GAMES_ZS_BOT_POS = 1.0;
+static const float SAVED_GAMES_ZS_DIST_FROM_CTR = 1.2; /* Fraction of height of ZS */
+
 /* Overlay for 'reconnecting' parameters */
 static const float RECON_TEXT_TOP_POS = 0.25; /* Pct of screen height = y coord of top of text */
 static const float RECON_TEXT_HEIGHT_PCT = 0.06; /* Pct of screen height = height of text */
@@ -96,6 +108,7 @@ static const raylib::Rectangle ZS_TEXT_BACK(0, 685, 232, 137);
 static const raylib::Rectangle ZS_TEXT_SUBMIT(0, 822, 384, 137);
 static const raylib::Rectangle ZS_TEXT_HOST_GAME(0, 959, 541, 137);
 static const raylib::Rectangle ZS_TEXT_JOIN_GAME(0, 1096, 518, 137);
+static const raylib::Rectangle ZS_TEXT_NEXT(0, 1233, 246, 137);
 
 /* Definitions for positions of particular entries on SelectableButton texture */
 static const raylib::Rectangle SB_WINDOWED_UNSELECTED(0, 0, 788, 192);
@@ -208,6 +221,24 @@ MainMenu::MainMenu(Window &window)
     hostJoinZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     hostJoinZoomSel->setDependentOpacity(0);
 
+    /* Initialize saved games submenu list selector */
+    savedGamesListSel = new ListSelector();
+    savedGamesListSel->setSelectionCallback(std::bind(&MainMenu::onListSelectorChanged, this, _1, _2));
+    ListSelectorTextItem *item = new ListSelectorTextItem(SAVED_GAMES_LS_CREATE_TEXT_HEIGHT,
+            SAVED_GAMES_LS_CREATE_TEXT);
+    savedGamesListSel->appendItem(item);
+
+    /* Initialize saved games submenu zoom selectors */
+    savedGamesBackZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    savedGamesBackZoomSel->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
+    savedGamesBackZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    savedGamesBackZoomSel->setDependentOpacity(0);
+    savedGamesNextZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    savedGamesNextZoomSel->addItem(ZS_TEXT_NEXT, ZS_TEXT_CENTER_Y);
+    savedGamesNextZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    savedGamesNextZoomSel->setDependentOpacity(0);
+    savedGamesNextZoomSel->setEnabled(false); /* Disabled until option selected in ListSelector */
+
     /* Initialize objects for 'reconnecting' overlay */
     reconLoadSpinner = new LoadingSpinner();
     reconOverlayBgTexture = new raylib::Texture(Util::formResourcePath(RECON_OVERLAY_BG_PATH));
@@ -236,6 +267,9 @@ MainMenu::~MainMenu()
     delete olNameSubmitZoomSel;
     delete olNameBackZoomSel;
     delete hostJoinZoomSel;
+    delete savedGamesListSel;
+    delete savedGamesBackZoomSel;
+    delete savedGamesNextZoomSel;
     delete session;
 }
 
@@ -468,6 +502,25 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
     hostJoinZoomSel->updatePosition(zoomSelHeight, getWidth() / 2, zoomSelYPos, zoomSelItemPadding);
 
+    /* Update saved games list ListSelector size params */
+    savedGamesListSel->setY(getHeight() * SAVED_GAMES_LS_TOP_POS);
+    savedGamesListSel->setHeight(getHeight() * (SAVED_GAMES_LS_BOT_POS - SAVED_GAMES_LS_TOP_POS));
+    savedGamesListSel->setWidth(getWidth() * SAVED_GAMES_LS_WIDTH);
+    distFromCenter = (savedGamesListSel->getWidth() / 2);
+    savedGamesListSel->setX((getWidth() / 2) - distFromCenter);
+    savedGamesListSel->setSeparatorHeight(getHeight() * SAVED_GAMES_LS_SEP_HEIGHT, true);
+    savedGamesListSel->setItemHeight(getHeight() * SAVED_GAMES_LS_ITEM_HEIGHT);
+
+    /* Update saved games submenu ZoomSelectors size params */
+    zoomSelHeight = (SAVED_GAMES_ZS_BOT_POS - SAVED_GAMES_ZS_TOP_POS) * getHeight();
+    zoomSelYPos = ((SAVED_GAMES_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
+    zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
+    distFromCenter = zoomSelHeight * SAVED_GAMES_ZS_DIST_FROM_CTR;
+    savedGamesBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) - distFromCenter,
+            zoomSelYPos, zoomSelItemPadding);
+    savedGamesNextZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
+            zoomSelYPos, zoomSelItemPadding);
+
     /* Update 'reconnecting' overlay size params */
     reconLoadSpinner->setSize(getHeight() * RECON_LS_SIZE_PCT);
     reconLoadSpinner->setY(getHeight() * RECON_LS_VERT_POS);
@@ -574,13 +627,39 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
             hostJoinZoomSel->onMousePressed();
             break;
         case State::SHOW_SAVED_GAMES:
-            /* TODO */
+            savedGamesListSel->onMousePressed();
+            savedGamesBackZoomSel->onMousePressed();
+            savedGamesNextZoomSel->onMousePressed();
             break;
         case State::FADE_TRANSITION:
             break;
         }
     }
 }
+
+void MainMenu::onMouseWheelMoved(float amount, const raylib::Vector2 &pos)
+{
+    if (reconnecting) {
+        /* Don't allow wheel scroll to do anything if reconnecting */
+        return;
+    }
+
+    /* Handle wheel scroll per state of the menu */
+    switch (currentState) {
+    case State::INITIAL_FADE:
+    case State::SHOW_TOPLEVEL:
+    case State::SHOW_SETTINGS:
+    case State::SHOW_ONLINE_NAME_INPUT:
+    case State::SHOW_HOST_JOIN:
+        break;
+    case State::SHOW_SAVED_GAMES:
+        savedGamesListSel->onMouseWheelMoved(amount, pos);
+        break;
+    case State::FADE_TRANSITION:
+        break;
+    }
+}
+
 
 void MainMenu::onKeyPressed(int key)
 {
@@ -610,6 +689,8 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Play Local Game */
         case 0:
+            /* TODO this is temp to test. REMOVE!!! */
+            initiateFadeToState(State::SHOW_SAVED_GAMES);
             break;
 
         /* Play Online */
@@ -676,6 +757,12 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         default:
             break;
         }
+    } else if (source == savedGamesBackZoomSel) {
+        /* Handle click for "Back" on saved games selection screen */
+        /* TODO fix this to direct to correct screen */
+        initiateFadeToState(State::SHOW_TOPLEVEL);
+    } else if (source == savedGamesNextZoomSel) {
+        /* Handle click for "Next" on saved games selection screen */
     }
 }
 
@@ -685,6 +772,19 @@ void MainMenu::onSelectableButtonSelected(SelectableButton *source)
         fullscreenSelButton->setSelected(false);
     } else if (source == fullscreenSelButton) {
         windowedSelButton->setSelected(false);
+    }
+}
+
+void MainMenu::onListSelectorChanged(ListSelector *source, int index) {
+    if (source == savedGamesListSel) {
+        /* Handle change of selection for list of saved games on saved games submenu */
+        if (index == -1) {
+            /* No item selected. Disable "Next" button on this screen */
+            savedGamesNextZoomSel->setEnabled(false);
+        } else {
+            /* Some item was selected. Enable "Next" button on this screen */
+            savedGamesNextZoomSel->setEnabled(true);
+        }
     }
 }
 
@@ -699,6 +799,11 @@ void MainMenu::initiateFadeToState(State nextState)
         olNameLoading = false;
         olNameTextBox->setEnabled(true);
         olNameSubmitZoomSel->setEnabled(true);
+        break;
+
+    case State::SHOW_SAVED_GAMES:
+        savedGamesListSel->deselectAll(); /* Will result in cb that disables "Next" button */
+        savedGamesListSel->scrollToTop(true);
         break;
 
     default:
@@ -741,7 +846,9 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
         break;
 
     case State::SHOW_SAVED_GAMES:
-        /* TODO */
+        savedGamesListSel->setDependentOpacity(opacity);
+        savedGamesBackZoomSel->setDependentOpacity(opacity);
+        savedGamesNextZoomSel->setDependentOpacity(opacity);
         break;
 
     default:
@@ -793,7 +900,9 @@ void MainMenu::updateForState(State menuState, double secs)
         break;
 
     case State::SHOW_SAVED_GAMES:
-        /* TODO */
+        savedGamesListSel->update(secs);
+        savedGamesBackZoomSel->update(secs);
+        savedGamesNextZoomSel->update(secs);
         break;
 
     default:
@@ -825,7 +934,9 @@ void MainMenu::updateMousePosForState(State menuState, const raylib::Vector2 &po
         break;
 
     case State::SHOW_SAVED_GAMES:
-        /* TODO */
+        savedGamesListSel->onMousePosUpdate(pos);
+        savedGamesBackZoomSel->onMousePosUpdate(pos);
+        savedGamesNextZoomSel->onMousePosUpdate(pos);
         break;
 
     default:
@@ -878,7 +989,9 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
         break;
 
     case State::SHOW_SAVED_GAMES:
-        /* TODO */
+        savedGamesListSel->render(renderer);
+        savedGamesBackZoomSel->render(renderer);
+        savedGamesNextZoomSel->render(renderer);
         break;
 
     default:
