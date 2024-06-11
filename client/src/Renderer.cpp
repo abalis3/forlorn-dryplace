@@ -37,29 +37,29 @@ void Renderer::drawRectangle(int x, int y, int w, int h)
     currentColor->DrawRectangle(x, y, w, h);
 }
 
-void Renderer::drawText(const char *text, int x, int y, int fontSize)
+void Renderer::drawText(const char *text, int x, int y, float fontSize)
 {
     currentColor->DrawText(text, x, y, fontSize);
 }
 
-void Renderer::drawText(const std::string &text, int x, int y, int fontSize)
+void Renderer::drawText(const std::string &text, int x, int y, float fontSize)
 {
     drawText(text.c_str(), x, y, fontSize);
 }
 
-void Renderer::drawText(raylib::Font &font, const std::string &text, int x, int y, int fontSize,
-        int fontSpacing, float opacity)
+void Renderer::drawText(raylib::Font &font, const std::string &text, int x, int y, float fontSize,
+        float fontSpacing, float opacity)
 {
     Color renderColor = Fade(*currentColor, opacity);
     font.DrawText(text, raylib::Vector2(x, y), fontSize, fontSpacing, renderColor);
 }
 
-int Renderer::measureText(const char *text, int fontSize)
+int Renderer::measureText(const char *text, float fontSize)
 {
     return MeasureText(text, fontSize);
 }
 
-int Renderer::measureText(std::string text, int fontSize)
+int Renderer::measureText(std::string text, float fontSize)
 {
     return measureText(text.c_str(), fontSize);
 }

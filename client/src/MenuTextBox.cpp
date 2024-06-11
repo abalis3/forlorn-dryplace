@@ -27,6 +27,7 @@ MenuTextBox::MenuTextBox(int maxChars)
     enabled = true;
     fontSize = BASE_FONT_SIZE;
     fontSpacing = 0;
+    emptyCallback = nullptr;
     recalculateContentSize();
 }
 
@@ -76,9 +77,28 @@ std::string MenuTextBox::getContent()
     return std::string(content);
 }
 
+int MenuTextBox::getContentLen() {
+    return numChars;
+}
+
 void MenuTextBox::setEnabled(bool enabled)
 {
     this->enabled = enabled;
+}
+
+void MenuTextBox::setEmptyCallback(std::function<void(MenuTextBox*, bool)> cb) {
+    emptyCallback = cb;
+}
+
+void MenuTextBox::clear()
+{
+    if (numChars > 0) {
+        content[0] = '\0';
+        numChars = 0;
+        if (emptyCallback != nullptr) {
+            emptyCallback(this, true);
+        }
+    }
 }
 
 void MenuTextBox::onKeyPressed(int key)
@@ -87,14 +107,22 @@ void MenuTextBox::onKeyPressed(int key)
         return;
     }
 
-    /* Handle presses of 0-9, A-Z, and Backspace */
-    if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'Z')) {
+    /* Handle presses of 0-9, A-Z, space, -, and Backspace */
+    if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'Z') || (key == ' ') || (key == '-')) {
         if (numChars < maxChars) {
             content[numChars++] = (char) key;
             content[numChars] = '\0';
+            if ((numChars == 1) && (emptyCallback != nullptr)) {
+                /* Just entered first char after being empty */
+                emptyCallback(this, false);
+            }
         }
     } else if (key == KEY_BACKSPACE && numChars > 0) {
         content[--numChars] = '\0';
+        if ((numChars == 0) && (emptyCallback != nullptr)) {
+            /* Just backspaced last char. Provide empty callback */
+            emptyCallback(this, true);
+        }
     }
 
     recalculateContentSize();

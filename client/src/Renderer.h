@@ -32,20 +32,20 @@ class Renderer {
     void drawRectangle(int x, int y, int w, int h);
 
     /* Draws the given string of text at position x,y with given font size */
-    void drawText(const char *text, int x, int y, int fontSize);
+    void drawText(const char *text, int x, int y, float fontSize);
 
     /* Draws the given std::string at position x,y with given font size */
-    void drawText(const std::string &text, int x, int y, int fontSize);
+    void drawText(const std::string &text, int x, int y, float fontSize);
 
     /* Draws the given std::string at position x,y with given font, size, and opacity */
-    void drawText(raylib::Font &font, const std::string &text, int x, int y, int fontSize,
-            int fontSpacing, float opacity);
+    void drawText(raylib::Font &font, const std::string &text, int x, int y, float fontSize,
+            float fontSpacing, float opacity);
 
     /* Gets the width in pixels of the rendered text with given font size */
-    int measureText(const char *text, int fontSize);
+    int measureText(const char *text, float fontSize);
 
     /* Gets the width in pixels of the rendered text with given font size */
-    int measureText(std::string text, int fontSize);
+    int measureText(std::string text, float fontSize);
 
     /* Draw the given texture with no tint and the given src and dst params */
     void drawTexture(raylib::Texture *tex, float srcX, float srcY,

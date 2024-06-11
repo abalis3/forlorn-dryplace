@@ -157,6 +157,11 @@ void Window::update(double secs)
             currentScene->onMouseButtonReleased(MOUSE_RIGHT_BUTTON, mousePos);
         }
 
+        raylib::Vector2 wheelMove = raylib::Mouse::GetWheelMoveV();
+        if (wheelMove.y != 0) {
+            currentScene->onMouseWheelMoved(wheelMove.y, mousePos);
+        }
+
         /* Characters for typing */
         int key = GetKeyPressed();
         while (key > 0) {

@@ -54,6 +54,12 @@ class Scene {
             const raylib::Vector2 &pos) {}
 
     /*
+     * To be called by the window if the scroll wheel has moved to notify
+     * the focused scene so it can handle it
+     */
+    virtual void onMouseWheelMoved(float amount, const raylib::Vector2 &pos) {}
+
+    /*
      * To be called by the window when a keyboard button has been pressed to notify
      * the the focused scene so it can handle it
      */
