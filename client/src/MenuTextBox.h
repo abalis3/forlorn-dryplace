@@ -1,6 +1,8 @@
 #ifndef FD__MENUTEXTBOX_H
 #define FD__MENUTEXTBOX_H
 
+#include <functional>
+
 #include "OpacityDependent.h"
 #include "Renderer.h"
 
@@ -37,8 +39,21 @@ class MenuTextBox : public OpacityDependent {
     /* Get the current string contained in the text box */
     std::string getContent();
 
+    /* Get the current number of chars contained in the text box */
+    int getContentLen();
+
     /* Set if this text box is currently enabled or not */
     void setEnabled(bool enabled);
+
+    /*
+     * Registers the given function as a callback for when the emptiness of this text box changes.
+     * The given function will receive a pointer to the MenuTextBox that generated the
+     * event and a bool value (true if becoming empty, false if no longer empty).
+     */
+    void setEmptyCallback(std::function<void(MenuTextBox*, bool)> cb);
+
+    /* Clears all text out of this text box */
+    void clear();
 
     /* Called by the main menu scene to notify the textbox of a relevant keypress event */
     void onKeyPressed(int key);
@@ -78,6 +93,9 @@ class MenuTextBox : public OpacityDependent {
 
     /* Is this text box currently enabled? */
     bool enabled;
+
+    /* Callback function that will be called when the textbox changes from being empty or back. */
+    std::function<void(MenuTextBox*, bool)> emptyCallback;
 
     /* Helper function to call to recalculate the size of the rendered text content */
     void recalculateContentSize();

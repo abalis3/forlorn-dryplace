@@ -88,6 +88,17 @@ static const float SAVED_GAMES_ZS_TOP_POS = 0.83;
 static const float SAVED_GAMES_ZS_BOT_POS = 1.0;
 static const float SAVED_GAMES_ZS_DIST_FROM_CTR = 1.2; /* Fraction of height of ZS */
 
+/* Create game online screen parameters */
+static const float CREATE_GAME_OL_TL_TOP_POS = 0.45; /* Top of text label, as pct of screen height */
+static const float CREATE_GAME_OL_TL_HEIGHT_PCT = 0.05; /* txt label height, pct of screen height */
+static const float CREATE_GAME_OL_TB_TOP_POS = 0.55; /* Top of text box, as pct of screen height */
+static const float CREATE_GAME_OL_TB_WIDTH_PCT = 1.4; /* Pct of screen height = width of tb */
+static const float CREATE_GAME_OL_TB_HEIGHT_PCT = 0.08; /* Pct of screen height = height of tb */
+static const float CREATE_GAME_OL_TB_MAX_CHARS = 35; /* Max number of chars for text box */
+static const float CREATE_GAME_OL_ZS_TOP_POS = 0.73; /* Top of ZoomSels as pct of screen height */
+static const float CREATE_GAME_OL_ZS_BOT_POS = 0.9; /* Bottom of ZoomSels as pct of screen height */
+static const float CREATE_GAME_OL_ZS_DIST_FROM_CTR = 1.2; /* Fraction of height of ZS */
+
 /* Overlay for 'reconnecting' parameters */
 static const float RECON_TEXT_TOP_POS = 0.25; /* Pct of screen height = y coord of top of text */
 static const float RECON_TEXT_HEIGHT_PCT = 0.06; /* Pct of screen height = height of text */
@@ -122,6 +133,7 @@ static const raylib::Rectangle TL_RESOLUTION(0, 137, 608, 137);
 static const raylib::Rectangle TL_ENTER_A_NAME(0, 274, 790, 137);
 static const raylib::Rectangle TL_NAME_TAKEN(0, 411, 618, 75);
 static const raylib::Rectangle TL_CONNECT_FAILED(0, 490, 833, 75);
+static const raylib::Rectangle TL_NEW_GAME_SAVE_FILE_NAME(0, 570, 1503, 137);
 
 /* For std::bind _1, _2 ... */
 using namespace std::placeholders;
@@ -159,6 +171,7 @@ MainMenu::MainMenu(Window &window)
     selButtonTexture->GenMipmaps();
     settingsTLOpacity = 0;
     olNameTLOpacity = 0;
+    createGameOlTLOpacity = 0;
 
     /* Initialize top level menu zoom selector */
     toplevelZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
@@ -203,6 +216,7 @@ MainMenu::MainMenu(Window &window)
     olNameSubmitZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
     olNameSubmitZoomSel->addItem(ZS_TEXT_SUBMIT, ZS_TEXT_CENTER_Y);
     olNameSubmitZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    olNameSubmitZoomSel->setEnabled(false); /* Disabled until text is entered */
     olNameSubmitZoomSel->setDependentOpacity(0);
     olNameBackZoomSel = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
     olNameBackZoomSel->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
@@ -211,6 +225,7 @@ MainMenu::MainMenu(Window &window)
 
     /* Initialize online name input submenu textbox and loading spinner */
     olNameTextBox = new MenuTextBox(OL_NAME_TB_MAX_CHARS);
+    olNameTextBox->setEmptyCallback(std::bind(&MainMenu::onTBEmptinessChanged, this, _1, _2));
     olNameLoadSpinner = new LoadingSpinner();
 
     /* Initialize host/join submenu zoom selector */
@@ -238,6 +253,21 @@ MainMenu::MainMenu(Window &window)
     savedGamesNextZoomSel->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
     savedGamesNextZoomSel->setDependentOpacity(0);
     savedGamesNextZoomSel->setEnabled(false); /* Disabled until option selected in ListSelector */
+
+    /* Initialize create online game submenu text box */
+    createGameOlTextBox = new MenuTextBox(CREATE_GAME_OL_TB_MAX_CHARS);
+    createGameOlTextBox->setEmptyCallback(std::bind(&MainMenu::onTBEmptinessChanged, this, _1, _2));
+
+    /* Initialize create online game submenu zoom selectors */
+    createGameOlBackZS = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    createGameOlBackZS->addItem(ZS_TEXT_BACK, ZS_TEXT_CENTER_Y);
+    createGameOlBackZS->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    createGameOlBackZS->setDependentOpacity(0);
+    createGameOlNextZS = new ZoomSelector(ZOOMSELECTOR_IMG_PATH, ZS_HOVER_RATIO);
+    createGameOlNextZS->addItem(ZS_TEXT_NEXT, ZS_TEXT_CENTER_Y);
+    createGameOlNextZS->setCallback(std::bind(&MainMenu::onZoomSelectorClicked, this, _1, _2));
+    createGameOlNextZS->setDependentOpacity(0);
+    createGameOlNextZS->setEnabled(false); /* Disabled until text has been entered */
 
     /* Initialize objects for 'reconnecting' overlay */
     reconLoadSpinner = new LoadingSpinner();
@@ -270,6 +300,9 @@ MainMenu::~MainMenu()
     delete savedGamesListSel;
     delete savedGamesBackZoomSel;
     delete savedGamesNextZoomSel;
+    delete createGameOlTextBox;
+    delete createGameOlBackZS;
+    delete createGameOlNextZS;
     delete session;
 }
 
@@ -426,9 +459,9 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     zoomSelYPos = ((SETTINGS_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
     zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
     distFromCenter = zoomSelHeight * SETTINGS_ZS_DIST_FROM_CTR_HEIGHT_PCT;
-    settingsApplyZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) - distFromCenter,
+    settingsBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) - distFromCenter,
             zoomSelYPos, zoomSelItemPadding);
-    settingsBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
+    settingsApplyZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
             zoomSelYPos, zoomSelItemPadding);
 
     /* Update settings menu text labels size params */
@@ -469,9 +502,9 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     zoomSelYPos = ((OL_NAME_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
     zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
     distFromCenter = zoomSelHeight * OL_NAME_ZS_DIST_FROM_CTR_HEIGHT_PCT;
-    olNameSubmitZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) - distFromCenter,
+    olNameBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) - distFromCenter,
             zoomSelYPos, zoomSelItemPadding);
-    olNameBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
+    olNameSubmitZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
             zoomSelYPos, zoomSelItemPadding);
 
     /* Update online name input text labels, loading spinner, and textbox size params */
@@ -519,6 +552,28 @@ void MainMenu::onSizeChangedFrom(int oldWidth, int oldHeight)
     savedGamesBackZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) - distFromCenter,
             zoomSelYPos, zoomSelItemPadding);
     savedGamesNextZoomSel->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
+            zoomSelYPos, zoomSelItemPadding);
+
+    /* Update create game online submenu text label and text box size params */
+    textLabelHeight = getHeight() * CREATE_GAME_OL_TL_HEIGHT_PCT;
+    createGameOlTLPromptDst.height = textLabelHeight;
+    createGameOlTLPromptDst.y = getHeight() * CREATE_GAME_OL_TL_TOP_POS;
+    createGameOlTLPromptDst.width =
+            (textLabelHeight / TL_NEW_GAME_SAVE_FILE_NAME.height) * TL_NEW_GAME_SAVE_FILE_NAME.width;
+    createGameOlTLPromptDst.x = (getWidth() - createGameOlTLPromptDst.width) / 2;
+    createGameOlTextBox->setSize(getHeight() * CREATE_GAME_OL_TB_WIDTH_PCT,
+            getHeight() * CREATE_GAME_OL_TB_HEIGHT_PCT);
+    createGameOlTextBox->setX((getWidth() - createGameOlTextBox->getWidth()) / 2);
+    createGameOlTextBox->setY(getHeight() * CREATE_GAME_OL_TB_TOP_POS);
+
+    /* Create game online submenu ZoomSelectors size params */
+    zoomSelHeight = (CREATE_GAME_OL_ZS_BOT_POS - CREATE_GAME_OL_ZS_TOP_POS) * getHeight();
+    zoomSelYPos = ((CREATE_GAME_OL_ZS_TOP_POS) * getHeight()) + (zoomSelHeight / 2);
+    zoomSelItemPadding = ZS_ITEM_PAD_PCT * getHeight();
+    distFromCenter = zoomSelHeight * CREATE_GAME_OL_ZS_DIST_FROM_CTR;
+    createGameOlBackZS->updatePosition(zoomSelHeight, (getWidth() / 2) - distFromCenter,
+            zoomSelYPos, zoomSelItemPadding);
+    createGameOlNextZS->updatePosition(zoomSelHeight, (getWidth() / 2) + distFromCenter,
             zoomSelYPos, zoomSelItemPadding);
 
     /* Update 'reconnecting' overlay size params */
@@ -626,10 +681,15 @@ void MainMenu::onMouseButtonPressed(int button, const raylib::Vector2 &pos)
         case State::SHOW_HOST_JOIN:
             hostJoinZoomSel->onMousePressed();
             break;
-        case State::SHOW_SAVED_GAMES:
+        case State::SHOW_SAVED_GAMES_LOCAL:
+        case State::SHOW_SAVED_GAMES_ONLINE:
             savedGamesListSel->onMousePressed();
             savedGamesBackZoomSel->onMousePressed();
             savedGamesNextZoomSel->onMousePressed();
+            break;
+        case State::SHOW_CREATE_GAME_ONLINE:
+            createGameOlBackZS->onMousePressed();
+            createGameOlNextZS->onMousePressed();
             break;
         case State::FADE_TRANSITION:
             break;
@@ -652,7 +712,8 @@ void MainMenu::onMouseWheelMoved(float amount, const raylib::Vector2 &pos)
     case State::SHOW_ONLINE_NAME_INPUT:
     case State::SHOW_HOST_JOIN:
         break;
-    case State::SHOW_SAVED_GAMES:
+    case State::SHOW_SAVED_GAMES_LOCAL:
+    case State::SHOW_SAVED_GAMES_ONLINE:
         savedGamesListSel->onMouseWheelMoved(amount, pos);
         break;
     case State::FADE_TRANSITION:
@@ -676,6 +737,13 @@ void MainMenu::onKeyPressed(int key)
             olNameTextBox->onKeyPressed(key);
         }
         break;
+    case State::SHOW_CREATE_GAME_ONLINE:
+        if (key == KEY_ENTER) {
+            
+        } else {
+            createGameOlTextBox->onKeyPressed(key);
+        }
+        break;
     default:
         break;
     }
@@ -689,8 +757,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Play Local Game */
         case 0:
-            /* TODO this is temp to test. REMOVE!!! */
-            initiateFadeToState(State::SHOW_SAVED_GAMES);
+            initiateFadeToState(State::SHOW_SAVED_GAMES_LOCAL);
             break;
 
         /* Play Online */
@@ -735,6 +802,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         triggerNameSubmission();
     } else if (source == olNameBackZoomSel) {
         /* Handle click for "back" on online name selection screen */
+        cancelNameSubmission();
         initiateFadeToState(State::SHOW_TOPLEVEL);
     } else if (source == hostJoinZoomSel) {
         /* Handle click for host/join screen zoom selector */
@@ -742,7 +810,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
 
         /* Host */
         case 0:
-            initiateFadeToState(State::SHOW_SAVED_GAMES);
+            initiateFadeToState(State::SHOW_SAVED_GAMES_ONLINE);
             break;
 
         /* Join */
@@ -759,10 +827,23 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         }
     } else if (source == savedGamesBackZoomSel) {
         /* Handle click for "Back" on saved games selection screen */
-        /* TODO fix this to direct to correct screen */
-        initiateFadeToState(State::SHOW_TOPLEVEL);
+        if (currentState == State::SHOW_SAVED_GAMES_LOCAL) {
+            initiateFadeToState(State::SHOW_TOPLEVEL);
+        } else if (currentState == State::SHOW_SAVED_GAMES_ONLINE) {
+            initiateFadeToState(State::SHOW_HOST_JOIN);
+        }
     } else if (source == savedGamesNextZoomSel) {
         /* Handle click for "Next" on saved games selection screen */
+        if (currentState == State::SHOW_SAVED_GAMES_LOCAL) {
+
+        } else if (currentState == State::SHOW_SAVED_GAMES_ONLINE) {
+            initiateFadeToState(State::SHOW_CREATE_GAME_ONLINE);
+        }
+    } else if (source == createGameOlBackZS) {
+        /* Handle click for "Back" on create online game screen */
+        initiateFadeToState(State::SHOW_SAVED_GAMES_ONLINE);
+    } else if (source == createGameOlNextZS) {
+        /* Handle click for "Next" on create online game screen */
     }
 }
 
@@ -788,6 +869,16 @@ void MainMenu::onListSelectorChanged(ListSelector *source, int index) {
     }
 }
 
+void MainMenu::onTBEmptinessChanged(MenuTextBox *source, bool is_empty) {
+    if (source == olNameTextBox) {
+        /* Enable/disable "Submit" button on online name entry screen */
+        olNameSubmitZoomSel->setEnabled(!is_empty);
+    } else if (source == createGameOlTextBox) {
+        /* Enable/disable "Next" button on online game create screen */
+        createGameOlNextZS->setEnabled(!is_empty);
+    }
+}
+
 void MainMenu::initiateFadeToState(State nextState)
 {
     /* Opportunity to add init/reset functionality before a state is shown */
@@ -798,12 +889,20 @@ void MainMenu::initiateFadeToState(State nextState)
         session->close();
         olNameLoading = false;
         olNameTextBox->setEnabled(true);
-        olNameSubmitZoomSel->setEnabled(true);
+        olNameSubmitZoomSel->setEnabled(olNameTextBox->getContentLen() > 0);
         break;
 
-    case State::SHOW_SAVED_GAMES:
+    case State::SHOW_SAVED_GAMES_LOCAL:
+    case State::SHOW_SAVED_GAMES_ONLINE:
         savedGamesListSel->deselectAll(); /* Will result in cb that disables "Next" button */
         savedGamesListSel->scrollToTop(true);
+        break;
+
+    case State::SHOW_CREATE_GAME_ONLINE:
+        if (currentState == State::SHOW_SAVED_GAMES_ONLINE) {
+            /* If we are progressing forward to this page, clear old text */
+            createGameOlTextBox->clear();
+        }
         break;
 
     default:
@@ -845,10 +944,18 @@ void MainMenu::setOpacityForState(State menuState, float opacity)
         hostJoinZoomSel->setDependentOpacity(opacity);
         break;
 
-    case State::SHOW_SAVED_GAMES:
+    case State::SHOW_SAVED_GAMES_LOCAL:
+    case State::SHOW_SAVED_GAMES_ONLINE:
         savedGamesListSel->setDependentOpacity(opacity);
         savedGamesBackZoomSel->setDependentOpacity(opacity);
         savedGamesNextZoomSel->setDependentOpacity(opacity);
+        break;
+
+    case State::SHOW_CREATE_GAME_ONLINE:
+        createGameOlTLOpacity = opacity;
+        createGameOlTextBox->setDependentOpacity(opacity);
+        createGameOlBackZS->setDependentOpacity(opacity);
+        createGameOlNextZS->setDependentOpacity(opacity);
         break;
 
     default:
@@ -899,10 +1006,16 @@ void MainMenu::updateForState(State menuState, double secs)
         hostJoinZoomSel->update(secs);
         break;
 
-    case State::SHOW_SAVED_GAMES:
+    case State::SHOW_SAVED_GAMES_LOCAL:
+    case State::SHOW_SAVED_GAMES_ONLINE:
         savedGamesListSel->update(secs);
         savedGamesBackZoomSel->update(secs);
         savedGamesNextZoomSel->update(secs);
+        break;
+
+    case State::SHOW_CREATE_GAME_ONLINE:
+        createGameOlBackZS->update(secs);
+        createGameOlNextZS->update(secs);
         break;
 
     default:
@@ -933,10 +1046,16 @@ void MainMenu::updateMousePosForState(State menuState, const raylib::Vector2 &po
         hostJoinZoomSel->onMousePosUpdate(pos);
         break;
 
-    case State::SHOW_SAVED_GAMES:
+    case State::SHOW_SAVED_GAMES_LOCAL:
+    case State::SHOW_SAVED_GAMES_ONLINE:
         savedGamesListSel->onMousePosUpdate(pos);
         savedGamesBackZoomSel->onMousePosUpdate(pos);
         savedGamesNextZoomSel->onMousePosUpdate(pos);
+        break;
+
+    case State::SHOW_CREATE_GAME_ONLINE:
+        createGameOlBackZS->onMousePosUpdate(pos);
+        createGameOlNextZS->onMousePosUpdate(pos);
         break;
 
     default:
@@ -988,10 +1107,19 @@ void MainMenu::renderForState(State menuState, Renderer *renderer)
         hostJoinZoomSel->render(renderer);
         break;
 
-    case State::SHOW_SAVED_GAMES:
+    case State::SHOW_SAVED_GAMES_LOCAL:
+    case State::SHOW_SAVED_GAMES_ONLINE:
         savedGamesListSel->render(renderer);
         savedGamesBackZoomSel->render(renderer);
         savedGamesNextZoomSel->render(renderer);
+        break;
+
+    case State::SHOW_CREATE_GAME_ONLINE:
+        renderer->drawTexture(textLabelTexture, TL_NEW_GAME_SAVE_FILE_NAME, createGameOlTLPromptDst,
+                createGameOlTLOpacity);
+        createGameOlTextBox->render(renderer);
+        createGameOlBackZS->render(renderer);
+        createGameOlNextZS->render(renderer);
         break;
 
     default:
@@ -1039,20 +1167,30 @@ void MainMenu::triggerNameSubmission()
     }
 }
 
+void MainMenu::cancelNameSubmission()
+{
+    session->close();
+    olNameLoading = false;
+    olNameTextBox->setEnabled(true);
+    olNameSubmitZoomSel->setEnabled(olNameTextBox->getContentLen() > 0);
+    olNameShowConnectErr = false;
+    olNameShowTakenErr = false;    
+}
+
 void MainMenu::handleNameSubmissionResult()
 {
     switch(olNameSubmitResult) {
     case ServerSession::Event::CONNECTION_FAILED:
         olNameLoading = false;
         olNameTextBox->setEnabled(true);
-        olNameSubmitZoomSel->setEnabled(true);
+        olNameSubmitZoomSel->setEnabled(olNameTextBox->getContentLen() > 0);
         olNameShowConnectErr = true;
         break;
     
     case ServerSession::Event::NAME_REJECTED:
         olNameLoading = false;
         olNameTextBox->setEnabled(true);
-        olNameSubmitZoomSel->setEnabled(true);
+        olNameSubmitZoomSel->setEnabled(olNameTextBox->getContentLen() > 0);
         olNameShowTakenErr = true;
         break;
 

@@ -207,7 +207,9 @@ class MainMenu : public Scene {
         SHOW_SETTINGS,
         SHOW_ONLINE_NAME_INPUT,
         SHOW_HOST_JOIN,
-        SHOW_SAVED_GAMES,
+        SHOW_SAVED_GAMES_ONLINE,
+        SHOW_SAVED_GAMES_LOCAL,
+        SHOW_CREATE_GAME_ONLINE,
     };
 
     /* Stores the current State being shown by the menu */
@@ -291,6 +293,21 @@ class MainMenu : public Scene {
     /* Zoom selector for load saved game screen "Next" button */
     ZoomSelector *savedGamesNextZoomSel;
 
+    /* Rectangle for on screen pos of online "New Game Save File Name" text label */
+    raylib::Rectangle createGameOlTLPromptDst;
+
+    /* Represents opacity level of text label on online create game screen */
+    float createGameOlTLOpacity;
+
+    /* Text box to enter save file name when creating a new online game */
+    MenuTextBox *createGameOlTextBox;
+
+    /* Zoom selector for create online game screen "Back" button */
+    ZoomSelector *createGameOlBackZS;
+
+    /* Zoom selector for create online game screen "Next" button */
+    ZoomSelector *createGameOlNextZS;
+
     /* Bool to track whether the conn is suspended and we are trying to reconnect */
     bool reconnecting;
 
@@ -305,6 +322,9 @@ class MainMenu : public Scene {
 
     /* Callback to be registered for when the selected item in a ListSelector changes */
     void onListSelectorChanged(ListSelector *source, int index);
+
+    /* Callback to be registered for when the empty state of a text box changes */
+    void onTBEmptinessChanged(MenuTextBox *source, bool is_empty);
 
     /*
      * Initiate the fade to another submenu state. This includes setting the from and to states,
@@ -331,6 +351,9 @@ class MainMenu : public Scene {
 
     /* Initiates the sequence of validating the input online-name */
     void triggerNameSubmission();
+
+    /* Cancels any pending name submission */
+    void cancelNameSubmission();
 
     /* 
      * Holds the currently queued name submission result for while the loading wheel is
