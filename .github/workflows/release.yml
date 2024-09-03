@@ -155,29 +155,29 @@ jobs:
     - name: Checkout commit code
       uses: actions/checkout@v2
     - name: Download server container artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4.1.7
       with:
         name: server-container
         path: server-container
     - name: Restore server image from archive
       run: docker load -i server-container/server-container-img.tar
     - name: Download linux build artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4.1.7
       with:
         name: linux-executable
         path: linux-executable
     - name: Download mac x86 build artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4.1.7
       with:
         name: macOS-x86-executable
         path: macOS-x86-executable
     - name: Download mac arm build artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4.1.7
       with:
         name: macOS-arm64-executable
         path: macOS-arm64-executable
     - name: Download windows build artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4.1.7
       with:
         name: windows-build
         path: windows-build
