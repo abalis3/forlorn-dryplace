@@ -2,65 +2,43 @@
 #include <iostream>
 #include <chrono>
 
+#include "ServerLog.h"
 #include "SessionList.h"
+#include "Lobby.h"
 
 #define PORT 44444
+#define MIN_LOOP_PERIOD_USEC 50000 /* minimum microsec per loop (sleep if faster) */
+#define USEC_PER_SEC 1000000
 
 SessionList *sessions;
-double g_exec_secs = 0;
+std::list<Lobby*> lobbies;
 
-static void onMsgRecv(Connection *conn, pbuf::NetworkMessage msg) {
-    if (msg.type_case() == pbuf::NetworkMessage::kNameRequest) {
-        pbuf::NetworkMessage reply;
-        Session *sess = sessions->findByName(msg.namerequest());
-        bool nameSuccess = ((sess == nullptr) || (sess->getConnection() == conn));
-        if (nameSuccess) {
-            if (sess == nullptr) {
-                sess = sessions->findByConnection(conn);
+static bool sessionCanUseName(Session *sess, const std::string &name) {
+    Session *sess_by_name = sessions->findByName(name);
+    return ((sess_by_name == nullptr) || (sess_by_name == sess));
+}
+
+static bool addSessionToLobby(Session *sess, const std::string &lobbyName) {
+    Lobby *lobby;
+    if (sess->getName() == lobbyName) { /* XXX does this comparison work b/t string and string* */
+        lobby = new Lobby();
+        lobbies.push_back(lobby);
+    } else {
+        std::list<Lobby*>::const_iterator iter;
+        for (iter = lobbies.begin(); iter != lobbies.end(); iter++) {
+            if (iter->getHostName() == lobbyName) {
+                lobby = *iter;
+                break;
             }
-            if (sess->getName() == nullptr) {
-                std::cout << g_exec_secs << ": Accepted name '" << msg.namerequest() << "' for session with " <<
-                        conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
-            } else {
-                std::cout << g_exec_secs << ": Updated name to '" << msg.namerequest() << "' for session with " <<
-                        conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
-            }
-            sess->setName(msg.namerequest());
-        } else {
-            std::cout << g_exec_secs << ": Already-taken name '" << msg.namerequest() << "' rejected for session with " <<
-                    conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
         }
-        reply.set_namereply(nameSuccess);
-        conn->sendNetworkMessage(reply);
     }
-}
-
-static void onConnectionLost(Connection *conn) {
-    Session *sess = sessions->findByConnection(conn);
-    if (sess != nullptr) {
-        std::cout << g_exec_secs << ": Connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << " terminated" << std::endl;
-        sessions->destroySession(sess);
-    }
-}
-
-static void onConnectionSuspended(Connection *conn) {
-    std::cout << g_exec_secs << ": SUSPENDED connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
-}
-
-static void onConnectionResumed(Connection *conn) {
-    std::cout << g_exec_secs << ": RESUMED connection with " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
+    return false;
 }
 
 static void onConnAccept(Connection *conn)
 {
-    conn->setOnMsgReceivedCallback(onMsgRecv);
-    conn->setOnConnectionLostCallback(onConnectionLost);
-    conn->setOnConnectionSuspendedCallback(onConnectionSuspended);
-    conn->setOnConnectionResumedCallback(onConnectionResumed);
-    Session *sess = sessions->generateSession();
-    sess->setConnection(conn);
-
-    std::cout << g_exec_secs << ": Connection received from " << conn->getPeerIp() << ":" << conn->getPeerPort() << std::endl;
+    sessions->generateSession(conn, sessionCanUseName, addSessionToLobby);
+    Logger::log() << "Connection received from " << conn->getPeerIp() << ":" << conn->getPeerPort();
 }
 
 int main()
@@ -86,21 +64,14 @@ int main()
         auto elapsedTime = std::chrono::high_resolution_clock::now() - lastTime;
         double elapsedSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsedTime).count() / 1000000000.0d;
         lastTime += std::chrono::nanoseconds((uint64_t) (1000000000 * elapsedSecs));
-        g_exec_secs += elapsedSecs;
 
+        if ((elapsedSecs * USEC_PER_SEC) < MIN_LOOP_PERIOD_USEC) {
+            usleep(MIN_LOOP_PERIOD_USEC - (elapsedSecs * USEC_PER_SEC));
+        }
+
+        Logger::update(elapsedSecs);
         listener->poll();
-        Session *sess = sessions->getFirst();
-        if (sess == nullptr) {
-            usleep(50000); /* If no sessions currently active, sleep for .05 seconds to conserve CPU */
-        }
-        while (sess != nullptr) {
-            Connection *conn = sess->getConnection();
-            /* Once we poll the conn, we can't use sess anymore (could have been destroyed), so last use of it is here */
-            sess = sess->getNext();
-            if (conn != nullptr) {
-                conn->poll(elapsedSecs);
-            }
-        }
+        sessions->pollSessions(elapsedSecs);
     }
 
     std::cout << "Stopping listener and destroying server" << std::endl;

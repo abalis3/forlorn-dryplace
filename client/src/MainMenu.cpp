@@ -739,7 +739,9 @@ void MainMenu::onKeyPressed(int key)
         break;
     case State::SHOW_CREATE_GAME_ONLINE:
         if (key == KEY_ENTER) {
-            
+            if (createGameOlTextBox->getContentLen() != 0) {
+                initiateFadeToState(State::SHOW_LOBBY);
+            }
         } else {
             createGameOlTextBox->onKeyPressed(key);
         }
@@ -844,6 +846,7 @@ void MainMenu::onZoomSelectorClicked(ZoomSelector *source, int index)
         initiateFadeToState(State::SHOW_SAVED_GAMES_ONLINE);
     } else if (source == createGameOlNextZS) {
         /* Handle click for "Next" on create online game screen */
+        initiateFadeToState(State::SHOW_LOBBY);
     }
 }
 

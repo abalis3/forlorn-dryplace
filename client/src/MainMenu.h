@@ -210,6 +210,7 @@ class MainMenu : public Scene {
         SHOW_SAVED_GAMES_ONLINE,
         SHOW_SAVED_GAMES_LOCAL,
         SHOW_CREATE_GAME_ONLINE,
+        SHOW_LOBBY,
     };
 
     /* Stores the current State being shown by the menu */

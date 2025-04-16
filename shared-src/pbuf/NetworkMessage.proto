@@ -14,5 +14,7 @@ message NetworkMessage {
         ProbeType probeType = 1; /* No data - Just maintaining conn status */
         string nameRequest = 2; /* Requesting a session with this name string */
         bool nameReply = 3; /* Replying to name request - true for accept, false for reject */
+        string joinLobbyRequest = 4; /* Request to join lobby of player with this name. Own name = create new lobby */
+        bool joinLobbyReply = 5; /* Replying to lobby join req - true for success, false for fail */
     }
 }
